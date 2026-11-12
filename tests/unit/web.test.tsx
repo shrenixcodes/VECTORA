@@ -19,11 +19,34 @@ let graph: KnowledgeGraph;
 beforeAll(async () => {
   graph = (await indexSample()).graph;
   // jsdom has no layout or canvas; the components under test only need these to exist.
-  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} });
-  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
-  window.matchMedia ??= ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as never;
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  window.matchMedia ??= ((q: string) => ({
+    matches: false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  })) as never;
   HTMLCanvasElement.prototype.getContext = (() => null) as never;
-  vi.stubGlobal('fetch', vi.fn(async () => new Response('{"error":"offline"}', { status: 503, headers: { 'content-type': 'application/json' } })));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response('{"error":"offline"}', { status: 503, headers: { 'content-type': 'application/json' } }),
+    ),
+  );
 });
 afterEach(() => cleanup());
 
@@ -36,33 +59,79 @@ const page = (el: React.ReactNode) =>
 
 describe('design tokens', () => {
   it('uses the specified palette', () => {
-    expect(LIGHT).toMatchObject({ surface: '#F3F1EA', text: '#20211F', textMuted: '#8C897F', ash: '#B8B3A7', indigo: '#34445C', clay: '#A18C72', line: '#DCD8CE', canvas: '#F8F7F2' });
-    expect(DARK).toMatchObject({ canvas: '#171816', surface: '#20211F', elevated: '#272824', text: '#ECEAE2', textSecondary: '#A7A499', textMuted: '#77766D', line: '#373832', indigo: '#8292AD', clay: '#B39A7A' });
+    expect(LIGHT).toMatchObject({
+      surface: '#F3F1EA',
+      text: '#20211F',
+      textMuted: '#8C897F',
+      ash: '#B8B3A7',
+      indigo: '#34445C',
+      clay: '#A18C72',
+      line: '#DCD8CE',
+      canvas: '#F8F7F2',
+    });
+    expect(DARK).toMatchObject({
+      canvas: '#171816',
+      surface: '#20211F',
+      elevated: '#272824',
+      text: '#ECEAE2',
+      textSecondary: '#A7A499',
+      textMuted: '#77766D',
+      line: '#373832',
+      indigo: '#8292AD',
+      clay: '#B39A7A',
+    });
   });
 
   it('keeps the stylesheet in step with the token source', () => {
     const css = fs.readFileSync(path.join(ROOT, 'apps/web/src/styles.css'), 'utf8').toLowerCase();
     const light = css.slice(css.indexOf(':root {'), css.indexOf(":root[data-theme='dark']"));
-    const dark = css.slice(css.indexOf(":root[data-theme='dark']"), css.indexOf(":root[data-motion='reduced']"));
-    const names: Record<string, string> = { canvas: 'canvas', surface: 'surface', elevated: 'elevated', text: 'text', textSecondary: 'text-secondary', textMuted: 'text-muted', line: 'line', indigo: 'indigo', clay: 'clay', ash: 'ash', success: 'success', warning: 'warning', error: 'error', selection: 'selection', relationActive: 'relation-active', relationUnverified: 'relation-unverified' };
+    const dark = css.slice(
+      css.indexOf(":root[data-theme='dark']"),
+      css.indexOf(":root[data-motion='reduced']"),
+    );
+    const names: Record<string, string> = {
+      canvas: 'canvas',
+      surface: 'surface',
+      elevated: 'elevated',
+      text: 'text',
+      textSecondary: 'text-secondary',
+      textMuted: 'text-muted',
+      line: 'line',
+      indigo: 'indigo',
+      clay: 'clay',
+      ash: 'ash',
+      success: 'success',
+      warning: 'warning',
+      error: 'error',
+      selection: 'selection',
+      relationActive: 'relation-active',
+      relationUnverified: 'relation-unverified',
+    };
     for (const [key, cssName] of Object.entries(names)) {
-      expect(light, `light ${key}`).toContain(`--${cssName}: ${LIGHT[key as keyof typeof LIGHT].toLowerCase()};`);
+      expect(light, `light ${key}`).toContain(
+        `--${cssName}: ${LIGHT[key as keyof typeof LIGHT].toLowerCase()};`,
+      );
       expect(dark, `dark ${key}`).toContain(`--${cssName}: ${DARK[key as keyof typeof DARK].toLowerCase()};`);
     }
-    for (const font of ['zen kaku gothic new', 'shippori mincho', 'ibm plex mono']) expect(css).toContain(font);
+    for (const font of ['zen kaku gothic new', 'shippori mincho', 'ibm plex mono'])
+      expect(css).toContain(font);
   });
 
   it('meets WCAG AA contrast for text on its backgrounds in both themes', () => {
     const lum = (hex: string) => {
-      const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      const c = [1, 3, 5]
+        .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
       return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
     };
-    const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    const ratio = (a: string, b: string) =>
+      (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
     for (const p of [LIGHT, DARK]) {
       for (const bg of [p.canvas, p.surface, p.elevated]) {
         expect(ratio(p.text, bg)).toBeGreaterThanOrEqual(7);
         expect(ratio(p.textSecondary, bg)).toBeGreaterThanOrEqual(4.5);
-        for (const c of [p.indigo, p.success, p.warning, p.error]) expect(ratio(c, bg), `${c} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+        for (const c of [p.indigo, p.success, p.warning, p.error])
+          expect(ratio(c, bg), `${c} on ${bg}`).toBeGreaterThanOrEqual(4.5);
         // Muted text is used for metadata at small sizes: it must stay above the 3:1 floor for non-essential text.
         expect(ratio(p.textMuted, bg), `muted on ${bg}`).toBeGreaterThanOrEqual(3);
       }
@@ -82,17 +151,31 @@ describe('design tokens', () => {
 });
 
 describe('shared graph view', () => {
-  const base = { density: 'full' as const, expandedIds: [], hiddenNodeTypes: [], hiddenEdgeTypes: [], showUnverified: true, focusId: null, maxNodes: 10000 };
+  const base = {
+    density: 'full' as const,
+    expandedIds: [],
+    hiddenNodeTypes: [],
+    hiddenEdgeTypes: [],
+    showUnverified: true,
+    focusId: null,
+    maxNodes: 10000,
+  };
 
   it('shows the whole graph at full density and only edges between visible nodes', () => {
     const adj = buildAdjacency(graph);
     const v = deriveView(graph, adj, base);
     expect(v.nodes.length).toBe(graph.nodes.length);
     expect(v.edges.length).toBe(graph.edges.length);
-    const hidden = deriveView(graph, adj, { ...base, hiddenNodeTypes: ['Package'], hiddenEdgeTypes: ['CONTAINS'] });
+    const hidden = deriveView(graph, adj, {
+      ...base,
+      hiddenNodeTypes: ['Package'],
+      hiddenEdgeTypes: ['CONTAINS'],
+    });
     const ids = new Set(hidden.nodes.map((n) => n.id));
     expect(hidden.nodes.some((n) => n.type === 'Package')).toBe(false);
-    expect(hidden.edges.every((e) => e.type !== 'CONTAINS' && ids.has(e.source) && ids.has(e.target))).toBe(true);
+    expect(hidden.edges.every((e) => e.type !== 'CONTAINS' && ids.has(e.source) && ids.has(e.target))).toBe(
+      true,
+    );
   });
 
   it('folds symbols into files at structure density until the file is expanded', () => {
@@ -100,20 +183,36 @@ describe('shared graph view', () => {
     const folded = deriveView(graph, adj, { ...base, density: 'structure' });
     expect(folded.nodes.some((n) => n.type === 'Function')).toBe(false);
     expect(folded.collapsedSymbols).toBe(graph.stats.symbolCount);
-    const open = deriveView(graph, adj, { ...base, density: 'structure', expandedIds: ['file:web/src/config.ts'] });
-    expect(open.nodes.filter((n) => n.filePath === 'web/src/config.ts').map((n) => n.name)).toEqual(expect.arrayContaining(['loadConfig', 'AppConfig', 'DEFAULT_PORT']));
-    const pinned = deriveView(graph, adj, { ...base, density: 'structure', pinnedIds: ['sym:web/src/auth/session.ts#verifyToken'] });
+    const open = deriveView(graph, adj, {
+      ...base,
+      density: 'structure',
+      expandedIds: ['file:web/src/config.ts'],
+    });
+    expect(open.nodes.filter((n) => n.filePath === 'web/src/config.ts').map((n) => n.name)).toEqual(
+      expect.arrayContaining(['loadConfig', 'AppConfig', 'DEFAULT_PORT']),
+    );
+    const pinned = deriveView(graph, adj, {
+      ...base,
+      density: 'structure',
+      pinnedIds: ['sym:web/src/auth/session.ts#verifyToken'],
+    });
     expect(pinned.nodes.some((n) => n.name === 'verifyToken')).toBe(true);
   });
 
   it('hides derived relationships on request, limits nodes and supports focus mode', () => {
     const adj = buildAdjacency(graph);
-    expect(deriveView(graph, adj, { ...base, showUnverified: false }).edges.every((e) => e.verified)).toBe(true);
+    expect(deriveView(graph, adj, { ...base, showUnverified: false }).edges.every((e) => e.verified)).toBe(
+      true,
+    );
     const limited = deriveView(graph, adj, { ...base, maxNodes: 40 });
     expect(limited.nodes).toHaveLength(40);
     expect(limited.truncated).toBe(true);
     expect(limited.nodes.some((n) => n.type === 'Repository')).toBe(true);
-    const focus = deriveView(graph, adj, { ...base, focusId: 'sym:web/src/auth/session.ts#verifyToken', focusDepth: 1 });
+    const focus = deriveView(graph, adj, {
+      ...base,
+      focusId: 'sym:web/src/auth/session.ts#verifyToken',
+      focusDepth: 1,
+    });
     const names = focus.nodes.map((n) => n.name);
     expect(names).toEqual(expect.arrayContaining(['verifyToken', 'requireAuth', 'session.ts']));
     expect(names).not.toContain('NoteRepository');
@@ -137,10 +236,19 @@ describe('shared graph view', () => {
     expect(tree.nodeId).toBe('repo:root');
     const labels = tree.children.map((c) => c.label);
     expect(labels).toEqual(expect.arrayContaining(['Web', 'Analytics', 'Tools', 'Concepts']));
-    const find = (item: typeof tree, label: string): typeof tree | undefined => (item.label === label ? item : item.children.map((c) => find(c, label)).find(Boolean));
-    const session = find(tree.children.find((c) => c.label === 'Web')!, 'session.ts')!;
+    const find = (item: typeof tree, label: string): typeof tree | undefined =>
+      item.label === label ? item : item.children.map((c) => find(c, label)).find(Boolean);
+    const session = find(
+      tree.children.find((c) => c.label === 'Web')!,
+      'session.ts',
+    )!;
     expect(session.nodeId).toBe('file:web/src/auth/session.ts');
-    expect(session.children.map((c) => c.label)).toEqual(['Session', 'sessions', 'createSession', 'verifyToken']);
+    expect(session.children.map((c) => c.label)).toEqual([
+      'Session',
+      'sessions',
+      'createSession',
+      'verifyToken',
+    ]);
     const service = find(tree, 'NoteService')!;
     expect(service.children.map((c) => c.label)).toEqual(expect.arrayContaining(['list', 'create']));
     const concepts = tree.children.find((c) => c.label === 'Concepts')!;
@@ -161,7 +269,11 @@ describe('workspace selection state', () => {
     s.hydrate('r1', null, { hiddenEdgeTypes: ['DEFINED_IN'] });
     s.select('a');
     s.select('b', { additive: true });
-    expect(useWorkspace.getState()).toMatchObject({ selectedIds: ['a', 'b'], primaryId: 'b', inspectorOpen: true });
+    expect(useWorkspace.getState()).toMatchObject({
+      selectedIds: ['a', 'b'],
+      primaryId: 'b',
+      inspectorOpen: true,
+    });
     s.select('b', { additive: true });
     expect(useWorkspace.getState()).toMatchObject({ selectedIds: ['a'], primaryId: 'a' });
     const tick = useWorkspace.getState().revealTick;
@@ -171,9 +283,21 @@ describe('workspace selection state', () => {
     s.toggleExpanded('file:x');
     s.setLayout('graph', { c: [1, 2] });
     const snap = useWorkspace.getState().snapshot('atlas');
-    expect(snap).toMatchObject({ view: 'atlas', selectedIds: ['c'], focusId: 'c', expandedIds: ['file:x'], hiddenEdgeTypes: ['DEFINED_IN'], layouts: { graph: { c: [1, 2] } } });
+    expect(snap).toMatchObject({
+      view: 'atlas',
+      selectedIds: ['c'],
+      focusId: 'c',
+      expandedIds: ['file:x'],
+      hiddenEdgeTypes: ['DEFINED_IN'],
+      layouts: { graph: { c: [1, 2] } },
+    });
     useWorkspace.getState().hydrate('r1', snap, { hiddenEdgeTypes: [] });
-    expect(useWorkspace.getState()).toMatchObject({ selectedIds: ['c'], primaryId: 'c', focusId: 'c', expandedIds: ['file:x'] });
+    expect(useWorkspace.getState()).toMatchObject({
+      selectedIds: ['c'],
+      primaryId: 'c',
+      focusId: 'c',
+      expandedIds: ['file:x'],
+    });
     s.clearSelection();
     expect(useWorkspace.getState().primaryId).toBeNull();
   });
@@ -187,7 +311,15 @@ describe('components and pages', () => {
     render(
       <>
         <Toggle label="Indexing cache" hint="Keeps analysis" checked={false} onChange={onToggle} />
-        <SelectField label="Theme" value="light" onChange={onSelect} options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} />
+        <SelectField
+          label="Theme"
+          value="light"
+          onChange={onSelect}
+          options={[
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+          ]}
+        />
         <NumberField label="Indexing workers" value={4} min={1} max={16} onChange={onNumber} />
         <Notice tone="error">Something failed</Notice>
         <TypeMark node={{ type: 'ApiEndpoint' }} />
@@ -208,10 +340,23 @@ describe('components and pages', () => {
   it('renders the landing page with the brand, headline and all sections', () => {
     page(<Landing />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Understand what connects.');
-    expect(screen.getByText(/Explore the hidden architecture of software\. Transform repositories into structured, interactive knowledge maps\./)).toBeTruthy();
-    expect(screen.getAllByRole('link', { name: 'Explore a repository' })[0]!.getAttribute('href')).toBe('/import');
+    expect(
+      screen.getByText(
+        /Explore the hidden architecture of software\. Transform repositories into structured, interactive knowledge maps\./,
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: 'Explore a repository' })[0]!.getAttribute('href')).toBe(
+      '/import',
+    );
     expect(screen.getByRole('link', { name: 'Learn about VECTORA' }).getAttribute('href')).toBe('/about');
-    for (const h of ['How it works', 'One graph, three ways to read it', 'Supported sources', 'Your code stays on your machine', 'About']) expect(screen.getByRole('heading', { name: h })).toBeTruthy();
+    for (const h of [
+      'How it works',
+      'One graph, three ways to read it',
+      'Supported sources',
+      'Your code stays on your machine',
+      'About',
+    ])
+      expect(screen.getByRole('heading', { name: h })).toBeTruthy();
     expect(screen.getByRole('img', { name: /Illustration/ })).toBeTruthy();
     expect(screen.getByRole('contentinfo').textContent).toContain('Understand what connects.');
     expect(document.querySelectorAll('main').length).toBe(1);
@@ -219,21 +364,45 @@ describe('components and pages', () => {
 
   it('renders the About page with every required section', async () => {
     page(<About />);
-    expect(screen.getByText(/VECTORA is a codebase intelligence platform that transforms software repositories/)).toBeTruthy();
-    for (const h of ['Product philosophy', 'How VECTORA works', 'Supported languages', 'Privacy principles', 'Technology credits', 'Version and licence', 'Documentation']) expect(screen.getByRole('heading', { name: h })).toBeTruthy();
+    expect(
+      screen.getByText(/VECTORA is a codebase intelligence platform that transforms software repositories/),
+    ).toBeTruthy();
+    for (const h of [
+      'Product philosophy',
+      'How VECTORA works',
+      'Supported languages',
+      'Privacy principles',
+      'Technology credits',
+      'Version and licence',
+      'Documentation',
+    ])
+      expect(screen.getByRole('heading', { name: h })).toBeTruthy();
     expect(screen.getByText('docs/CHANGELOG.md')).toBeTruthy();
     // The language table falls back to the built-in list when the engine is offline.
-    await waitFor(() => expect(screen.getAllByRole('cell', { name: 'TypeScript' }).length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByRole('cell', { name: 'TypeScript' }).length).toBeGreaterThan(0),
+    );
   });
 
   it('keeps user-facing copy free of the excluded terminology', () => {
     const dir = path.join(ROOT, 'apps/web/src');
-    const files = (fs.readdirSync(dir, { recursive: true }) as string[]).filter((f) => /\.(tsx|html)$/.test(f));
+    const files = (fs.readdirSync(dir, { recursive: true }) as string[]).filter((f) =>
+      /\.(tsx|html)$/.test(f),
+    );
     const banned = /\b(AI|A\.I\.|artificial intelligence|LLM|GPT|machine learning|neural|chatbot|copilot)\b/;
-    for (const f of [...files.map((x) => path.join(dir, x)), path.join(ROOT, 'apps/web/index.html'), path.join(ROOT, 'docs/USER_GUIDE.md'), path.join(ROOT, 'README.md')]) {
+    for (const f of [
+      ...files.map((x) => path.join(dir, x)),
+      path.join(ROOT, 'apps/web/index.html'),
+      path.join(ROOT, 'docs/USER_GUIDE.md'),
+      path.join(ROOT, 'README.md'),
+    ]) {
       if (!fs.existsSync(f)) continue;
       // Strip code comments and import lines; what remains includes all text shown to users.
-      const text = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/^import .*$/gm, '');
+      const text = fs
+        .readFileSync(f, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/^import .*$/gm, '');
       expect(banned.exec(text)?.[0], f).toBeUndefined();
     }
   });

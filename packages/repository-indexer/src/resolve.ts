@@ -65,14 +65,22 @@ interface Target {
 }
 
 const MAX_UNRESOLVED_SAMPLES = 2000;
-const CLASS_KINDS: ReadonlySet<NodeType> = new Set(['Class', 'DatabaseModel', 'Component', 'Interface', 'Type']);
+const CLASS_KINDS: ReadonlySet<NodeType> = new Set([
+  'Class',
+  'DatabaseModel',
+  'Component',
+  'Interface',
+  'Type',
+]);
 const SELF_NAMES = new Set(['self', 'this', 'cls', 'Self', 'super', 'base']);
 const PY_STDLIB = new Set(
-  ('abc argparse array ast asyncio base64 bisect builtins calendar collections concurrent configparser contextlib copy csv ctypes dataclasses datetime ' +
+  (
+    'abc argparse array ast asyncio base64 bisect builtins calendar collections concurrent configparser contextlib copy csv ctypes dataclasses datetime ' +
     'decimal difflib dis email enum errno functools gc getpass glob gzip hashlib heapq hmac html http importlib inspect io ipaddress itertools json ' +
     'logging math mimetypes multiprocessing operator os pathlib pickle platform pprint queue random re secrets select shlex shutil signal socket ' +
     'sqlite3 ssl stat string struct subprocess sys tempfile textwrap threading time timeit tkinter traceback types typing unittest urllib uuid ' +
-    'warnings weakref xml zipfile zlib zoneinfo __future__ typing_extensions').split(' '),
+    'warnings weakref xml zipfile zlib zoneinfo __future__ typing_extensions'
+  ).split(' '),
 );
 
 const dirOf = (p: string): string => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '');
@@ -104,12 +112,31 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     verified = true,
     metadata?: Record<string, unknown>,
   ): void => {
-    edges.push({ id: edgeId(type, source, target), source, target, type, evidence, location, extractionMethod: method, confidence, verified, ...(metadata ? { metadata } : {}) });
+    edges.push({
+      id: edgeId(type, source, target),
+      source,
+      target,
+      type,
+      evidence,
+      location,
+      extractionMethod: method,
+      confidence,
+      verified,
+      ...(metadata ? { metadata } : {}),
+    });
   };
-  const reportUnresolved = (fromPath: string, fromSymbol: string | null, kind: EdgeType, name: string, line: number, reason: string): void => {
+  const reportUnresolved = (
+    fromPath: string,
+    fromSymbol: string | null,
+    kind: EdgeType,
+    name: string,
+    line: number,
+    reason: string,
+  ): void => {
     unresolvedCount++;
     unresolvedByReason[reason] = (unresolvedByReason[reason] ?? 0) + 1;
-    if (unresolved.length < MAX_UNRESOLVED_SAMPLES) unresolved.push({ fromPath, fromSymbol, kind, name, line, reason });
+    if (unresolved.length < MAX_UNRESOLVED_SAMPLES)
+      unresolved.push({ fromPath, fromSymbol, kind, name, line, reason });
   };
 
   // ---- structure: repository, directories, files -------------------------
@@ -218,7 +245,12 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         language: ff.language,
         description: s.description,
         metadata: { ...(s.metadata ?? {}), qualifiedName: s.localId, exported: s.exported },
-        extractionMethod: ff.adapter === 'typescript' ? 'typescript-compiler' : ff.adapter === 'python' ? 'python-ast' : 'tree-sitter',
+        extractionMethod:
+          ff.adapter === 'typescript'
+            ? 'typescript-compiler'
+            : ff.adapter === 'python'
+              ? 'python-ast'
+              : 'tree-sitter',
         confidence: 1,
         verified: true,
       });
@@ -226,11 +258,22 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
       const ev = `${s.name} declared at ${p}:${s.location.startLine}`;
       addEdge('CONTAINS', parentId, id, ev, s.location, 'filesystem');
       if (parentId !== fileId) addEdge('DEFINED_IN', id, fileId, ev, s.location, 'filesystem');
-      else if (s.exported && s.kind !== 'ApiEndpoint') addEdge('EXPORTS', fileId, id, `${s.name} is exported from ${p}`, s.location, nodes[nodes.length - 1]!.extractionMethod);
+      else if (s.exported && s.kind !== 'ApiEndpoint')
+        addEdge(
+          'EXPORTS',
+          fileId,
+          id,
+          `${s.name} is exported from ${p}`,
+          s.location,
+          nodes[nodes.length - 1]!.extractionMethod,
+        );
     }
     ctxs.set(p, { facts: ff, top, byLocal, bindings: new Map(), visible: [], external: new Set() });
     if (ff.moduleName) {
-      (byModuleName.get(`${ff.language}:${ff.moduleName}`) ?? byModuleName.set(`${ff.language}:${ff.moduleName}`, []).get(`${ff.language}:${ff.moduleName}`)!).push(p);
+      (
+        byModuleName.get(`${ff.language}:${ff.moduleName}`) ??
+        byModuleName.set(`${ff.language}:${ff.moduleName}`, []).get(`${ff.language}:${ff.moduleName}`)!
+      ).push(p);
       if (ff.language === 'python') {
         const parts = ff.moduleName.split('.');
         for (let i = 0; i < parts.length; i++) {
@@ -255,7 +298,13 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         filePath: null,
         location: null,
         language: null,
-        metadata: { external: true, declared: !!dep, version: dep?.version ?? null, ecosystem: dep?.ecosystem ?? ecosystem, dev: dep?.dev ?? false },
+        metadata: {
+          external: true,
+          declared: !!dep,
+          version: dep?.version ?? null,
+          ecosystem: dep?.ecosystem ?? ecosystem,
+          dev: dep?.dev ?? false,
+        },
         extractionMethod: dep ? 'manifest' : 'filesystem',
         confidence: 1,
         verified: true,
@@ -267,7 +316,17 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     const pkgId = ensurePackage(d.name, d.ecosystem);
     const manifestId = nodeId.file(d.manifest);
     if (nodeIds.has(manifestId))
-      addEdge('DEPENDS_ON', manifestId, pkgId, d.evidence, { path: d.manifest, startLine: d.line, endLine: d.line }, 'manifest', 1, true, { dev: d.dev, version: d.version });
+      addEdge(
+        'DEPENDS_ON',
+        manifestId,
+        pkgId,
+        d.evidence,
+        { path: d.manifest, startLine: d.line, endLine: d.line },
+        'manifest',
+        1,
+        true,
+        { dev: d.dev, version: d.version },
+      );
   }
 
   // ---- imports ------------------------------------------------------------
@@ -305,14 +364,51 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     return tie ? null : best;
   };
 
-  const importEdge = (from: string, target: string, imp: ImportFact, method: ExtractionMethod, confidence = 1, verified = true) => {
-    const targetId = fileSet.has(target) ? nodeId.file(target) : nodeIds.has(nodeId.directory(target)) ? nodeId.directory(target) : null;
+  const importEdge = (
+    from: string,
+    target: string,
+    imp: ImportFact,
+    method: ExtractionMethod,
+    confidence = 1,
+    verified = true,
+  ) => {
+    const targetId = fileSet.has(target)
+      ? nodeId.file(target)
+      : nodeIds.has(nodeId.directory(target))
+        ? nodeId.directory(target)
+        : null;
     if (!targetId) return;
-    addEdge('IMPORTS', nodeId.file(from), targetId, imp.evidence, imp.location, method, confidence, verified, { specifier: imp.specifier, kind: imp.kind });
+    addEdge(
+      'IMPORTS',
+      nodeId.file(from),
+      targetId,
+      imp.evidence,
+      imp.location,
+      method,
+      confidence,
+      verified,
+      { specifier: imp.specifier, kind: imp.kind },
+    );
   };
-  const externalImport = (from: string, pkg: string, ecosystem: string, imp: ImportFact, method: ExtractionMethod) => {
+  const externalImport = (
+    from: string,
+    pkg: string,
+    ecosystem: string,
+    imp: ImportFact,
+    method: ExtractionMethod,
+  ) => {
     markExternal(from, imp);
-    addEdge('IMPORTS', nodeId.file(from), ensurePackage(pkg, ecosystem), imp.evidence, imp.location, method, 1, true, { specifier: imp.specifier, external: true });
+    addEdge(
+      'IMPORTS',
+      nodeId.file(from),
+      ensurePackage(pkg, ecosystem),
+      imp.evidence,
+      imp.location,
+      method,
+      1,
+      true,
+      { specifier: imp.specifier, external: true },
+    );
   };
   const fileNodeIndex = new Map<string, GraphNode>();
   for (const n of nodes) if (n.type === 'File' || n.type === 'Configuration') fileNodeIndex.set(n.id, n);
@@ -321,7 +417,8 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     if (!c) return;
     for (const n of imp.names) if (n.local && n.local !== '*') c.external.add(n.local);
     // `import a.b.c` binds the top-level name `a`.
-    if (c.facts.language === 'python' && !imp.specifier.startsWith('.')) c.external.add(imp.specifier.split('.')[0]!);
+    if (c.facts.language === 'python' && !imp.specifier.startsWith('.'))
+      c.external.add(imp.specifier.split('.')[0]!);
   };
   const noteBuiltinFast = (from: string, name: string, imp?: ImportFact) => {
     if (imp) markExternal(from, imp);
@@ -333,7 +430,9 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
 
   const rustCrateRoot = (file: string): string | null => {
     let best: string | null = null;
-    for (const c of manifests.cargoCrates) if ((c.dir === '' || file.startsWith(`${c.dir}/`)) && (best === null || c.dir.length > best.length)) best = c.dir;
+    for (const c of manifests.cargoCrates)
+      if ((c.dir === '' || file.startsWith(`${c.dir}/`)) && (best === null || c.dir.length > best.length))
+        best = c.dir;
     if (best !== null) return best === '' ? 'src' : `${best}/src`;
     const i = file.lastIndexOf('/src/');
     return i === -1 ? (file.startsWith('src/') ? 'src' : null) : file.slice(0, i + 4);
@@ -355,13 +454,32 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
             const tctx = ctxs.get(imp.resolvedPath);
             for (const n of imp.names) {
               const l = n.imported !== '*' ? tctx?.top.get(n.imported) : undefined;
-              if (l) addEdge('EXPORTS', nodeId.file(p), nodeId.symbol(imp.resolvedPath, l), imp.evidence, imp.location, 'typescript-compiler', 1, true, { reexport: true });
+              if (l)
+                addEdge(
+                  'EXPORTS',
+                  nodeId.file(p),
+                  nodeId.symbol(imp.resolvedPath, l),
+                  imp.evidence,
+                  imp.location,
+                  'typescript-compiler',
+                  1,
+                  true,
+                  { reexport: true },
+                );
             }
           }
         } else if (imp.externalPackage) {
           if (imp.builtin) noteBuiltinFast(p, imp.externalPackage, imp);
           else externalImport(p, imp.externalPackage, 'npm', imp, 'typescript-compiler');
-        } else reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'import target not found in repository');
+        } else
+          reportUnresolved(
+            p,
+            null,
+            'IMPORTS',
+            imp.specifier,
+            imp.location.startLine,
+            'import target not found in repository',
+          );
         continue;
       }
 
@@ -380,7 +498,12 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         const mod = moduleFile(rest);
         let linked = false;
         for (const n of imp.names) {
-          if (n.imported === '*' && !imp.specifier.startsWith('.') && imp.names.length === 1 && n.local !== '*') {
+          if (
+            n.imported === '*' &&
+            !imp.specifier.startsWith('.') &&
+            imp.names.length === 1 &&
+            n.local !== '*'
+          ) {
             // `import a.b.c [as x]`
             if (mod) {
               bind(ctx, n.local === rest.split('.')[0] ? rest : n.local, { files: [mod], localId: null });
@@ -405,9 +528,24 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         if (mod) importEdge(p, mod, imp, 'scope-resolution');
         else if (!linked) {
           const topName = rest.split('.')[0] ?? '';
-          if (level > 0 || !topName) reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'import target not found in repository');
+          if (level > 0 || !topName)
+            reportUnresolved(
+              p,
+              null,
+              'IMPORTS',
+              imp.specifier,
+              imp.location.startLine,
+              'import target not found in repository',
+            );
           else if (PY_STDLIB.has(topName)) noteBuiltinFast(p, topName, imp);
-          else externalImport(p, declared.has(topName.toLowerCase()) ? topName.toLowerCase() : topName, 'pypi', imp, 'python-ast');
+          else
+            externalImport(
+              p,
+              declared.has(topName.toLowerCase()) ? topName.toLowerCase() : topName,
+              'pypi',
+              imp,
+              'python-ast',
+            );
         }
         continue;
       }
@@ -433,22 +571,43 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
             if (hit) {
               bind(ctx, symName, { files: [hit.path], localId: hit.localId });
               importEdge(p, hit.path, imp, 'scope-resolution');
-            } else reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'imported name not found in package');
+            } else
+              reportUnresolved(
+                p,
+                null,
+                'IMPORTS',
+                imp.specifier,
+                imp.location.startLine,
+                'imported name not found in package',
+              );
           }
-        } else if (/^(java|javax|jdk|sun)\./.test(full)) noteBuiltinFast(p, full.split('.').slice(0, 2).join('.'), imp);
+        } else if (/^(java|javax|jdk|sun)\./.test(full))
+          noteBuiltinFast(p, full.split('.').slice(0, 2).join('.'), imp);
         else externalImport(p, full.split('.').slice(0, 2).join('.'), 'maven', imp, 'tree-sitter');
         continue;
       }
 
       if (lang === 'go') {
-        const mod = manifests.goModules.find((m) => imp.specifier === m.module || imp.specifier.startsWith(`${m.module}/`));
+        const mod = manifests.goModules.find(
+          (m) => imp.specifier === m.module || imp.specifier.startsWith(`${m.module}/`),
+        );
         if (mod) {
-          const dir = path.posix.join(mod.dir, imp.specifier.slice(mod.module.length)).replace(/^\/|\/$/g, '');
+          const dir = path.posix
+            .join(mod.dir, imp.specifier.slice(mod.module.length))
+            .replace(/^\/|\/$/g, '');
           const pkgFiles = (filesByDir.get(dir) ?? []).filter((f) => f.endsWith('.go'));
           if (pkgFiles.length) {
             for (const n of imp.names) bind(ctx, n.local, { files: pkgFiles, localId: null });
             importEdge(p, dir, imp, 'scope-resolution');
-          } else reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'import target not found in repository');
+          } else
+            reportUnresolved(
+              p,
+              null,
+              'IMPORTS',
+              imp.specifier,
+              imp.location.startLine,
+              'import target not found in repository',
+            );
         } else if (!imp.specifier.split('/')[0]!.includes('.')) noteBuiltinFast(p, imp.specifier, imp);
         else externalImport(p, imp.specifier.split('/').slice(0, 3).join('/'), 'go', imp, 'tree-sitter');
         continue;
@@ -459,7 +618,10 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         const root = rustCrateRoot(p);
         const n = imp.names[0] ?? { imported: '*', local: '*' };
         if (!root || segs.length === 0) continue;
-        const rel = p.slice(root.length + 1).replace(/\.rs$/, '').split('/');
+        const rel = p
+          .slice(root.length + 1)
+          .replace(/\.rs$/, '')
+          .split('/');
         const cur = ['lib', 'main', 'mod'].includes(rel[rel.length - 1]!) ? rel.slice(0, -1) : rel;
         let abs: string[] | null = null;
         if (segs[0] === 'crate') abs = segs.slice(1);
@@ -483,15 +645,34 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
             const remaining = path0.slice(k);
             if (n.imported === '*' && imp.specifier.endsWith('*')) ctx.visible.push(file);
             else if (remaining.length === 0) bind(ctx, n.local, { files: [file], localId: null });
-            else bind(ctx, n.local, { files: [file], localId: ctxs.get(file)?.top.get(remaining[0]!) ?? null });
+            else
+              bind(ctx, n.local, { files: [file], localId: ctxs.get(file)?.top.get(remaining[0]!) ?? null });
             if (file !== p) importEdge(p, file, imp, 'scope-resolution');
             done = true;
           }
-          if (!done) reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'import target not found in repository');
+          if (!done)
+            reportUnresolved(
+              p,
+              null,
+              'IMPORTS',
+              imp.specifier,
+              imp.location.startLine,
+              'import target not found in repository',
+            );
         } else if (['std', 'core', 'alloc'].includes(segs[0]!)) noteBuiltinFast(p, segs[0]!, imp);
         else {
           const crate = segs[0]!;
-          externalImport(p, declared.has(crate) ? crate : declared.has(crate.replace(/_/g, '-')) ? crate.replace(/_/g, '-') : crate, 'cargo', imp, 'tree-sitter');
+          externalImport(
+            p,
+            declared.has(crate)
+              ? crate
+              : declared.has(crate.replace(/_/g, '-'))
+                ? crate.replace(/_/g, '-')
+                : crate,
+            'cargo',
+            imp,
+            'tree-sitter',
+          );
         }
         continue;
       }
@@ -504,13 +685,23 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         const rel = path.posix.normalize(path.posix.join(dirOf(p), imp.specifier));
         let target = fileSet.has(rel) ? rel : null;
         if (!target) {
-          const cands = (filesByBase.get(baseOf(imp.specifier)) ?? []).filter((f) => f.endsWith(imp.specifier.replace(/^(\.\.?\/)+/, '')));
+          const cands = (filesByBase.get(baseOf(imp.specifier)) ?? []).filter((f) =>
+            f.endsWith(imp.specifier.replace(/^(\.\.?\/)+/, '')),
+          );
           target = closest(p, cands) ?? (cands.length === 1 ? cands[0]! : null);
         }
         if (target) {
           ctx.visible.push(target);
           importEdge(p, target, imp, 'scope-resolution');
-        } else reportUnresolved(p, null, 'IMPORTS', imp.specifier, imp.location.startLine, 'included file not found in repository');
+        } else
+          reportUnresolved(
+            p,
+            null,
+            'IMPORTS',
+            imp.specifier,
+            imp.location.startLine,
+            'included file not found in repository',
+          );
         continue;
       }
 
@@ -525,13 +716,26 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     }
 
     // Language visibility rules: same package (Java, Go) or namespace (C#).
-    if ((lang === 'java' || lang === 'csharp') && ctx.facts.moduleName) ctx.visible.push(...(byModuleName.get(`${lang}:${ctx.facts.moduleName}`) ?? []).filter((f) => f !== p));
-    if (lang === 'go') ctx.visible.push(...(filesByDir.get(dirOf(p)) ?? []).filter((f) => f !== p && f.endsWith('.go') && ctxs.get(f)?.facts.moduleName === ctx.facts.moduleName));
+    if ((lang === 'java' || lang === 'csharp') && ctx.facts.moduleName)
+      ctx.visible.push(...(byModuleName.get(`${lang}:${ctx.facts.moduleName}`) ?? []).filter((f) => f !== p));
+    if (lang === 'go')
+      ctx.visible.push(
+        ...(filesByDir.get(dirOf(p)) ?? []).filter(
+          (f) => f !== p && f.endsWith('.go') && ctxs.get(f)?.facts.moduleName === ctx.facts.moduleName,
+        ),
+      );
   }
 
   // ---- references ---------------------------------------------------------
-  const kindOf = (pth: string, localId: string | null): NodeType | null => (localId ? (ctxs.get(pth)?.byLocal.get(localId)?.kind ?? null) : null);
-  const mk = (pth: string, localId: string | null, method: ExtractionMethod, confidence: number, verified: boolean): Target => ({
+  const kindOf = (pth: string, localId: string | null): NodeType | null =>
+    localId ? (ctxs.get(pth)?.byLocal.get(localId)?.kind ?? null) : null;
+  const mk = (
+    pth: string,
+    localId: string | null,
+    method: ExtractionMethod,
+    confidence: number,
+    verified: boolean,
+  ): Target => ({
     path: pth,
     localId,
     kind: kindOf(pth, localId),
@@ -557,7 +761,9 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
       }
       if (matches.length > 1) {
         // A prototype in a header and its definition are the same entity: prefer the definition.
-        const defs = matches.filter((m) => !ctxs.get(m.path)?.byLocal.get(m.localId)?.metadata?.declarationOnly);
+        const defs = matches.filter(
+          (m) => !ctxs.get(m.path)?.byLocal.get(m.localId)?.metadata?.declarationOnly,
+        );
         if (defs.length === 1) return mk(defs[0]!.path, defs[0]!.localId, 'name-resolution', 0.7, false);
         return { reason: 'ambiguous name (several visible definitions)' };
       }
@@ -567,7 +773,9 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         if (sym?.metadata?.declarationOnly) {
           // Look for the definition next to the header (util.h -> util.c / util.cpp).
           const stem = stemOf(m.path);
-          const impl = ['.c', '.cc', '.cpp', '.cxx'].map((e) => stem + e).find((f) => ctxs.get(f)?.top.has(name));
+          const impl = ['.c', '.cc', '.cpp', '.cxx']
+            .map((e) => stem + e)
+            .find((f) => ctxs.get(f)?.top.has(name));
           if (impl) m = { path: impl, localId: ctxs.get(impl)!.top.get(name)! };
         }
         return mk(m.path, m.localId, 'name-resolution', 0.7, false);
@@ -579,7 +787,12 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
   /** Resolves `a.b.c` / `a::b` to a symbol or module by walking imports. */
   const lookupDotted = (p: string, ctx: FileCtx, dotted: string): Target | null => {
     const whole = ctx.bindings.get(dotted);
-    if (whole) return whole.localId ? mk(whole.files[0]!, whole.localId, 'scope-resolution', 0.9, true) : whole.files.length === 1 ? mk(whole.files[0]!, null, 'scope-resolution', 0.9, true) : null;
+    if (whole)
+      return whole.localId
+        ? mk(whole.files[0]!, whole.localId, 'scope-resolution', 0.9, true)
+        : whole.files.length === 1
+          ? mk(whole.files[0]!, null, 'scope-resolution', 0.9, true)
+          : null;
     const parts = dotted.split(/\.|::/).filter(Boolean);
     if (parts.length === 0) return null;
     let cur: Target | null = null;
@@ -604,22 +817,41 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
         cur = mk(cur.path, member, cur.method, cur.confidence, cur.verified);
       } else return null;
     }
-    if (!cur && files) return files.length === 1 ? mk(files[0]!, null, 'scope-resolution', 0.9, true) : ({ path: files[0]!, localId: null, kind: null, method: 'scope-resolution', confidence: 0.9, verified: true, files } as Target & { files: string[] });
+    if (!cur && files)
+      return files.length === 1
+        ? mk(files[0]!, null, 'scope-resolution', 0.9, true)
+        : ({
+            path: files[0]!,
+            localId: null,
+            kind: null,
+            method: 'scope-resolution',
+            confidence: 0.9,
+            verified: true,
+            files,
+          } as Target & { files: string[] });
     return cur;
   };
 
   const IMPLICIT_THIS = new Set(['java', 'csharp', 'cpp']);
   const enclosingType = (ctx: FileCtx, from: string | null): string | null => {
     let cls = from ? (ctx.byLocal.get(from)?.parent ?? null) : null;
-    while (cls && !CLASS_KINDS.has(ctx.byLocal.get(cls)?.kind ?? 'Function')) cls = ctx.byLocal.get(cls)?.parent ?? null;
+    while (cls && !CLASS_KINDS.has(ctx.byLocal.get(cls)?.kind ?? 'Function'))
+      cls = ctx.byLocal.get(cls)?.parent ?? null;
     return cls;
   };
-  const resolveNamed = (p: string, ctx: FileCtx, ref: ReferenceFact, name: string, receiver: string | undefined): Target | { reason: string } | { external: true } => {
+  const resolveNamed = (
+    p: string,
+    ctx: FileCtx,
+    ref: ReferenceFact,
+    name: string,
+    receiver: string | undefined,
+  ): Target | { reason: string } | { external: true } => {
     if (!receiver) {
       // Languages with an implicit receiver: an unqualified call may be a member of the enclosing type.
       if (IMPLICIT_THIS.has(ctx.facts.language) && ref.kind === 'CALLS') {
         const cls = enclosingType(ctx, ref.from);
-        if (cls && ctx.byLocal.has(`${cls}.${name}`)) return mk(p, `${cls}.${name}`, 'scope-resolution', 0.9, true);
+        if (cls && ctx.byLocal.has(`${cls}.${name}`))
+          return mk(p, `${cls}.${name}`, 'scope-resolution', 0.9, true);
       }
       const r = lookupName(p, ctx, name);
       if ('reason' in r && ctx.external.has(name)) return { external: true };
@@ -630,7 +862,8 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     if (SELF_NAMES.has(head)) {
       if (receiver !== head) return { reason: 'receiver type unknown' };
       const cls = enclosingType(ctx, ref.from);
-      if (cls && ctx.byLocal.has(`${cls}.${name}`)) return mk(p, `${cls}.${name}`, 'scope-resolution', 0.9, true);
+      if (cls && ctx.byLocal.has(`${cls}.${name}`))
+        return mk(p, `${cls}.${name}`, 'scope-resolution', 0.9, true);
       return { reason: 'member not found on enclosing type (inherited or dynamic)' };
     }
     const recv = lookupDotted(p, ctx, receiver);
@@ -638,11 +871,14 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
     const multi = (recv as Target & { files?: string[] }).files;
     if (recv.localId === null) {
       const hit = symbolIn(multi ?? [recv.path], name);
-      return hit ? mk(hit.path, hit.localId, 'scope-resolution', 0.9, true) : { reason: 'member not found in imported module' };
+      return hit
+        ? mk(hit.path, hit.localId, 'scope-resolution', 0.9, true)
+        : { reason: 'member not found in imported module' };
     }
     if (recv.kind && CLASS_KINDS.has(recv.kind)) {
       const member = `${recv.localId}.${name}`;
-      if (ctxs.get(recv.path)?.byLocal.has(member)) return mk(recv.path, member, recv.method, Math.min(recv.confidence, 0.9), recv.verified);
+      if (ctxs.get(recv.path)?.byLocal.has(member))
+        return mk(recv.path, member, recv.method, Math.min(recv.confidence, 0.9), recv.verified);
       return { reason: 'member not found on type' };
     }
     return { reason: 'receiver type unknown' };
@@ -655,14 +891,40 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
       if ('resolved' in ref.target) {
         const t = ref.target.resolved;
         const targetId = t.localId ? nodeId.symbol(t.path, t.localId) : nodeId.file(t.path);
-        if (nodeIds.has(targetId)) addEdge(ref.kind, fromId, targetId, ref.evidence, ref.location, ref.method, ref.confidence, ref.verified, ref.metadata);
-        else reportUnresolved(p, ref.from, ref.kind, t.localId ?? t.path, ref.location.startLine, 'declaration is outside the indexed files');
+        if (nodeIds.has(targetId))
+          addEdge(
+            ref.kind,
+            fromId,
+            targetId,
+            ref.evidence,
+            ref.location,
+            ref.method,
+            ref.confidence,
+            ref.verified,
+            ref.metadata,
+          );
+        else
+          reportUnresolved(
+            p,
+            ref.from,
+            ref.kind,
+            t.localId ?? t.path,
+            ref.location.startLine,
+            'declaration is outside the indexed files',
+          );
         continue;
       }
       const { name, receiver } = ref.target;
       const speculative = ref.metadata?.typeOnly === true || ref.metadata?.argument === true;
       if (ctx.facts.adapter === 'typescript') {
-        reportUnresolved(p, ref.from, ref.kind, name, ref.location.startLine, 'no declaration found by the type checker');
+        reportUnresolved(
+          p,
+          ref.from,
+          ref.kind,
+          name,
+          ref.location.startLine,
+          'no declaration found by the type checker',
+        );
         continue;
       }
       const result = resolveNamed(p, ctx, ref, name, receiver);
@@ -682,22 +944,51 @@ export function resolveGraph(input: ResolveInput): ResolveOutput {
           if (t?.kind === 'DatabaseModel') models.set(`${t.path}#${t.localId}`, t);
         }
         for (const t of models.values())
-          addEdge(ref.metadata.db === 'read' ? 'READS_FROM' : 'WRITES_TO', fromId, nodeId.symbol(t.path, t.localId!), ref.evidence, ref.location, 'pattern', 0.7, false, { operation: name });
+          addEdge(
+            ref.metadata.db === 'read' ? 'READS_FROM' : 'WRITES_TO',
+            fromId,
+            nodeId.symbol(t.path, t.localId!),
+            ref.evidence,
+            ref.location,
+            'pattern',
+            0.7,
+            false,
+            { operation: name },
+          );
       }
 
       if ('external' in result) continue;
       if ('reason' in result) {
-        if (!speculative) reportUnresolved(p, ref.from, ref.kind, receiver ? `${receiver}.${name}` : name, ref.location.startLine, result.reason);
+        if (!speculative)
+          reportUnresolved(
+            p,
+            ref.from,
+            ref.kind,
+            receiver ? `${receiver}.${name}` : name,
+            ref.location.startLine,
+            result.reason,
+          );
         continue;
       }
       if (speculative && result.localId === null) continue;
       let kind = ref.kind;
-      if (kind === 'CALLS' && result.kind && (result.kind === 'Class' || result.kind === 'DatabaseModel')) kind = 'INSTANTIATES';
+      if (kind === 'CALLS' && result.kind && (result.kind === 'Class' || result.kind === 'DatabaseModel'))
+        kind = 'INSTANTIATES';
       if (kind === 'CALLS' && result.localId === null) continue; // a module is not callable
       const targetId = result.localId ? nodeId.symbol(result.path, result.localId) : nodeId.file(result.path);
       if (targetId === fromId && kind !== 'CALLS') continue;
       if (!nodeIds.has(targetId)) continue;
-      addEdge(kind, fromId, targetId, ref.evidence, ref.location, result.method, result.confidence, result.verified, ref.metadata);
+      addEdge(
+        kind,
+        fromId,
+        targetId,
+        ref.evidence,
+        ref.location,
+        result.method,
+        result.confidence,
+        result.verified,
+        ref.metadata,
+      );
     }
   }
 

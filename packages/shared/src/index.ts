@@ -198,7 +198,14 @@ export interface RepositoryOverview {
   }[];
   frameworks: { name: string; evidence: string }[];
   entryPoints: OverviewEntryPoint[];
-  subsystems: { id: string; name: string; files: number; symbols: number; inbound: number; outbound: number }[];
+  subsystems: {
+    id: string;
+    name: string;
+    files: number;
+    symbols: number;
+    inbound: number;
+    outbound: number;
+  }[];
   concepts: { id: string; name: string; members: number; evidence: string[] }[];
   largestModules: { id: string; path: string; symbols: number; lines: number }[];
   dependencies: {
@@ -295,7 +302,10 @@ export function redactDeep<T>(value: T): T {
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = /token|secret|password|authorization|api[_-]?key|credential/i.test(k) && typeof v === 'string' ? '[redacted]' : redactDeep(v);
+      out[k] =
+        /token|secret|password|authorization|api[_-]?key|credential/i.test(k) && typeof v === 'string'
+          ? '[redacted]'
+          : redactDeep(v);
     }
     return out as T;
   }

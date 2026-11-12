@@ -42,8 +42,15 @@ export function findInstallRoot(): string {
 export function loadConfig(overrides: Partial<EngineConfig> = {}): EngineConfig {
   const env = process.env;
   const installRoot = overrides.installRoot ?? findInstallRoot();
-  const webDist = [path.join(installRoot, 'dist', 'web'), path.join(installRoot, 'apps', 'web', 'dist')].find((d) => fs.existsSync(path.join(d, 'index.html'))) ?? null;
-  const sampleDir = [path.join(installRoot, 'samples', 'sample-repo'), path.join(installRoot, 'dist', 'samples', 'sample-repo')].find((d) => fs.existsSync(d)) ?? null;
+  const webDist =
+    [path.join(installRoot, 'dist', 'web'), path.join(installRoot, 'apps', 'web', 'dist')].find((d) =>
+      fs.existsSync(path.join(d, 'index.html')),
+    ) ?? null;
+  const sampleDir =
+    [
+      path.join(installRoot, 'samples', 'sample-repo'),
+      path.join(installRoot, 'dist', 'samples', 'sample-repo'),
+    ].find((d) => fs.existsSync(d)) ?? null;
   const port = Number(env.VECTORA_PORT ?? DEFAULT_ENGINE_PORT);
   return {
     host: env.VECTORA_HOST ?? '127.0.0.1',

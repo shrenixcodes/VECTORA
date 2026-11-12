@@ -32,16 +32,72 @@ const NEST_HTTP = new Set(['Get', 'Post', 'Put', 'Patch', 'Delete', 'Head', 'Opt
 const MODEL_BASES = new Set(['Model', 'BaseEntity', 'Document', 'Entity']);
 const MODEL_DECORATORS = new Set(['Entity', 'Table', 'Schema', 'ObjectType']);
 const TABLE_FACTORIES = new Set(['sqliteTable', 'pgTable', 'mysqlTable', 'defineTable', 'model', 'define']);
-const DB_READ = /^(find|get|select|query|count|all|where|aggregate|first|exists|list|fetch|load|search|paginate)/i;
-const DB_WRITE = /^(create|insert|update|delete|save|remove|upsert|destroy|bulk|truncate|increment|decrement|set|add|put|drop)/i;
+const DB_READ =
+  /^(find|get|select|query|count|all|where|aggregate|first|exists|list|fetch|load|search|paginate)/i;
+const DB_WRITE =
+  /^(create|insert|update|delete|save|remove|upsert|destroy|bulk|truncate|increment|decrement|set|add|put|drop)/i;
 const KNOWN_GLOBALS = new Set([
-  'require', 'describe', 'it', 'test', 'expect', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'jest', 'vi',
-  'process', 'Buffer', 'setImmediate', 'clearImmediate', 'define', '$', 'jQuery', 'suite', 'before', 'after', 'gc',
+  'require',
+  'describe',
+  'it',
+  'test',
+  'expect',
+  'beforeEach',
+  'afterEach',
+  'beforeAll',
+  'afterAll',
+  'jest',
+  'vi',
+  'process',
+  'Buffer',
+  'setImmediate',
+  'clearImmediate',
+  'define',
+  '$',
+  'jQuery',
+  'suite',
+  'before',
+  'after',
+  'gc',
 ]);
 const NODE_BUILTINS = new Set([
-  'assert', 'buffer', 'child_process', 'cluster', 'console', 'constants', 'crypto', 'dgram', 'dns', 'domain', 'events',
-  'fs', 'http', 'http2', 'https', 'module', 'net', 'os', 'path', 'perf_hooks', 'process', 'punycode', 'querystring',
-  'readline', 'repl', 'stream', 'string_decoder', 'sys', 'timers', 'tls', 'tty', 'url', 'util', 'v8', 'vm', 'worker_threads', 'zlib',
+  'assert',
+  'buffer',
+  'child_process',
+  'cluster',
+  'console',
+  'constants',
+  'crypto',
+  'dgram',
+  'dns',
+  'domain',
+  'events',
+  'fs',
+  'http',
+  'http2',
+  'https',
+  'module',
+  'net',
+  'os',
+  'path',
+  'perf_hooks',
+  'process',
+  'punycode',
+  'querystring',
+  'readline',
+  'repl',
+  'stream',
+  'string_decoder',
+  'sys',
+  'timers',
+  'tls',
+  'tty',
+  'url',
+  'util',
+  'v8',
+  'vm',
+  'worker_threads',
+  'zlib',
 ]);
 
 interface SymRef {
@@ -155,7 +211,10 @@ function jsDocOf(node: ts.Node): string | undefined {
   const docs = (host as { jsDoc?: ts.JSDoc[] } | undefined)?.jsDoc;
   const text = docs?.length ? ts.getTextOfJSDocComment(docs[docs.length - 1]!.comment) : undefined;
   if (!text) return undefined;
-  const first = text.trim().split(/\n\s*\n/)[0]!.replace(/\s+/g, ' ');
+  const first = text
+    .trim()
+    .split(/\n\s*\n/)[0]!
+    .replace(/\s+/g, ' ');
   return first.length > 300 ? `${first.slice(0, 297)}...` : first;
 }
 
@@ -167,7 +226,11 @@ function routeCallInfo(call: ts.CallExpression): { method: string; routePath: st
   const first = call.arguments[0]!;
   if (!ts.isStringLiteralLike(first) || !first.text.startsWith('/')) return null;
   const recv = callee.expression;
-  const recvName = ts.isIdentifier(recv) ? recv.text : ts.isPropertyAccessExpression(recv) ? recv.name.text : null;
+  const recvName = ts.isIdentifier(recv)
+    ? recv.text
+    : ts.isPropertyAccessExpression(recv)
+      ? recv.name.text
+      : null;
   if (!recvName || !ROUTE_RECEIVER.test(recvName)) return null;
   return { method: method.toUpperCase(), routePath: first.text };
 }
@@ -220,7 +283,10 @@ class Resolver {
     return null;
   }
 
-  resolve(specifier: string, fromFile: string): { path: string | null; asset: string | null; external: string | null; builtin: boolean } {
+  resolve(
+    specifier: string,
+    fromFile: string,
+  ): { path: string | null; asset: string | null; external: string | null; builtin: boolean } {
     const key = `${fromFile}\0${specifier}`;
     const dir = fromFile.includes('/') ? fromFile.slice(0, fromFile.lastIndexOf('/')) : '';
     const none = { path: null, asset: null, external: null, builtin: false };
@@ -247,7 +313,10 @@ class Resolver {
         let capture: string | null = null;
         if (star === -1) {
           if (pattern === specifier) capture = '';
-        } else if (specifier.startsWith(pattern.slice(0, star)) && specifier.endsWith(pattern.slice(star + 1))) {
+        } else if (
+          specifier.startsWith(pattern.slice(0, star)) &&
+          specifier.endsWith(pattern.slice(star + 1))
+        ) {
           capture = specifier.slice(star, specifier.length - (pattern.length - star - 1));
         }
         if (capture === null) continue;
@@ -269,7 +338,8 @@ class Resolver {
       if (pkg) {
         const sub = specifier.slice(pkgName.length).replace(/^\//, '');
         hit = sub
-          ? (this.tryFile(path.posix.join(pkg.dir, sub)) ?? this.tryFile(path.posix.join(pkg.dir, 'src', sub)))
+          ? (this.tryFile(path.posix.join(pkg.dir, sub)) ??
+            this.tryFile(path.posix.join(pkg.dir, 'src', sub)))
           : ((pkg.entry && this.codeFiles.has(pkg.entry) ? pkg.entry : null) ??
             this.tryFile(path.posix.join(pkg.dir, 'src/index')) ??
             this.tryFile(path.posix.join(pkg.dir, 'index')));
@@ -340,7 +410,8 @@ function analyzeProject(files: SourceFileInput[], ctx: AnalyzeContext): FileFact
       }
     }
     // Only the compiler's own library files may be read from outside the repository.
-    if (!canon(fileName).startsWith(`${rootAbs}/`)) return defaultGetSourceFile(fileName, languageVersion, onError, shouldCreate);
+    if (!canon(fileName).startsWith(`${rootAbs}/`))
+      return defaultGetSourceFile(fileName, languageVersion, onError, shouldCreate);
     return undefined;
   };
   host.resolveModuleNameLiterals = (literals, containingFile) => {
@@ -350,10 +421,17 @@ function analyzeProject(files: SourceFileInput[], ctx: AnalyzeContext): FileFact
       const r = resolver.resolve(lit.text, from);
       if (!r.path) return { resolvedModule: undefined };
       const abs = absOf(r.path);
-      return { resolvedModule: { resolvedFileName: abs, extension: extensionFor(abs), isExternalLibraryImport: false } };
+      return {
+        resolvedModule: {
+          resolvedFileName: abs,
+          extension: extensionFor(abs),
+          isExternalLibraryImport: false,
+        },
+      };
     });
   };
-  host.resolveTypeReferenceDirectiveReferences = (refs) => refs.map(() => ({ resolvedTypeReferenceDirective: undefined }));
+  host.resolveTypeReferenceDirectiveReferences = (refs) =>
+    refs.map(() => ({ resolvedTypeReferenceDirective: undefined }));
 
   const program = ts.createProgram({ rootNames: files.map((f) => absOf(f.path)), options, host });
   const checker = program.getTypeChecker();
@@ -388,7 +466,8 @@ function analyzeProject(files: SourceFileInput[], ctx: AnalyzeContext): FileFact
         entry.facts.references.push(...entry.extraRefs);
         const diags = (program.getSyntacticDiagnostics(entry.sf) ?? []).slice(0, 5);
         for (const d of diags) {
-          const line = d.start !== undefined ? entry.sf.getLineAndCharacterOfPosition(d.start).line + 1 : undefined;
+          const line =
+            d.start !== undefined ? entry.sf.getLineAndCharacterOfPosition(d.start).line + 1 : undefined;
           entry.facts.errors.push({
             path: f.path,
             line,
@@ -397,7 +476,11 @@ function analyzeProject(files: SourceFileInput[], ctx: AnalyzeContext): FileFact
           });
         }
       } catch (err) {
-        entry.facts.errors.push({ path: f.path, message: `Analysis failed: ${(err as Error).message}`, severity: 'error' });
+        entry.facts.errors.push({
+          path: f.path,
+          message: `Analysis failed: ${(err as Error).message}`,
+          severity: 'error',
+        });
       }
     }
     done++;
@@ -424,7 +507,12 @@ function collectSymbols(
   let defaultExportName: string | null = null;
 
   for (const st of sf.statements) {
-    if (ts.isExportDeclaration(st) && !st.moduleSpecifier && st.exportClause && ts.isNamedExports(st.exportClause)) {
+    if (
+      ts.isExportDeclaration(st) &&
+      !st.moduleSpecifier &&
+      st.exportClause &&
+      ts.isNamedExports(st.exportClause)
+    ) {
       for (const el of st.exportClause.elements) exportedNames.add((el.propertyName ?? el.name).text);
     } else if (ts.isExportAssignment(st) && ts.isIdentifier(st.expression)) {
       defaultExportName = st.expression.text;
@@ -434,11 +522,21 @@ function collectSymbols(
   const loc = (node: ts.Node): SourceLocation => {
     const s = sf.getLineAndCharacterOfPosition(node.getStart(sf));
     const e = sf.getLineAndCharacterOfPosition(node.getEnd());
-    return { path: rel, startLine: s.line + 1, endLine: e.line + 1, startColumn: s.character, endColumn: e.character };
+    return {
+      path: rel,
+      startLine: s.line + 1,
+      endLine: e.line + 1,
+      startColumn: s.character,
+      endColumn: e.character,
+    };
   };
   const signature = (node: ts.Node, body: ts.Node | undefined): string => {
     const end = body ? body.getStart(sf) : node.getEnd();
-    const text = sf.text.slice(node.getStart(sf), end).replace(/\s+/g, ' ').trim().replace(/\s*=>?\s*$/, '');
+    const text = sf.text
+      .slice(node.getStart(sf), end)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\s*=>?\s*$/, '');
     return text.length > 200 ? `${text.slice(0, 197)}...` : text;
   };
   const add = (
@@ -478,7 +576,12 @@ function collectSymbols(
     return 'Class';
   };
 
-  const addEndpoint = (node: ts.Node, method: string, routePath: string, extra: Record<string, unknown> = {}): string => {
+  const addEndpoint = (
+    node: ts.Node,
+    method: string,
+    routePath: string,
+    extra: Record<string, unknown> = {},
+  ): string => {
     const localId = uniqueLocalId(used, `route:${method} ${routePath}`);
     facts.symbols.push({
       localId,
@@ -492,19 +595,41 @@ function collectSymbols(
     return localId;
   };
 
-  const visitClass = (node: ts.ClassLikeDeclaration, name: string, parent: string | null, exported: boolean, mapNode: ts.Node = node) => {
+  const visitClass = (
+    node: ts.ClassLikeDeclaration,
+    name: string,
+    parent: string | null,
+    exported: boolean,
+    mapNode: ts.Node = node,
+  ) => {
     const kind = classKind(node);
-    const id = add(node, name, kind, parent, exported, { abstract: hasModifier(node, ts.SyntaxKind.AbstractKeyword) || undefined }, mapNode);
+    const id = add(
+      node,
+      name,
+      kind,
+      parent,
+      exported,
+      { abstract: hasModifier(node, ts.SyntaxKind.AbstractKeyword) || undefined },
+      mapNode,
+    );
     if (mapNode !== node) declMap.set(node, { path: rel, localId: id, kind });
     const controller = decoratorCall(node, new Set(['Controller']));
     for (const m of node.members) {
       let mid: string | null = null;
-      if (ts.isMethodDeclaration(m) && m.name && (ts.isIdentifier(m.name) || ts.isStringLiteral(m.name) || ts.isPrivateIdentifier(m.name))) {
+      if (
+        ts.isMethodDeclaration(m) &&
+        m.name &&
+        (ts.isIdentifier(m.name) || ts.isStringLiteral(m.name) || ts.isPrivateIdentifier(m.name))
+      ) {
         mid = add(m, m.name.text, 'Method', id, false, {
           signature: signature(m, m.body),
           async: hasModifier(m, ts.SyntaxKind.AsyncKeyword) || undefined,
           static: hasModifier(m, ts.SyntaxKind.StaticKeyword) || undefined,
-          visibility: hasModifier(m, ts.SyntaxKind.PrivateKeyword) ? 'private' : hasModifier(m, ts.SyntaxKind.ProtectedKeyword) ? 'protected' : 'public',
+          visibility: hasModifier(m, ts.SyntaxKind.PrivateKeyword)
+            ? 'private'
+            : hasModifier(m, ts.SyntaxKind.ProtectedKeyword)
+              ? 'protected'
+              : 'public',
         });
         const http = decoratorCall(m, NEST_HTTP);
         if (http) {
@@ -524,8 +649,13 @@ function collectSymbols(
         }
       } else if (ts.isConstructorDeclaration(m)) {
         mid = add(m, 'constructor', 'Method', id, false, { signature: signature(m, m.body) });
-      } else if ((ts.isGetAccessorDeclaration(m) || ts.isSetAccessorDeclaration(m)) && ts.isIdentifier(m.name)) {
-        mid = add(m, m.name.text, 'Method', id, false, { accessor: ts.isGetAccessorDeclaration(m) ? 'get' : 'set' });
+      } else if (
+        (ts.isGetAccessorDeclaration(m) || ts.isSetAccessorDeclaration(m)) &&
+        ts.isIdentifier(m.name)
+      ) {
+        mid = add(m, m.name.text, 'Method', id, false, {
+          accessor: ts.isGetAccessorDeclaration(m) ? 'get' : 'set',
+        });
       } else if (ts.isPropertyDeclaration(m) && ts.isIdentifier(m.name) && isFunctionLike(m.initializer)) {
         mid = add(m, m.name.text, 'Method', id, false, { signature: signature(m, m.initializer.body) });
       }
@@ -536,7 +666,8 @@ function collectSymbols(
   const visitStatement = (st: ts.Node, parent: string | null) => {
     if (ts.isFunctionDeclaration(st)) {
       const name = st.name?.text ?? 'default';
-      const kind: NodeType = isJsxFile && /^[A-Z]/.test(name) && containsJsx(st.body) ? 'Component' : 'Function';
+      const kind: NodeType =
+        isJsxFile && /^[A-Z]/.test(name) && containsJsx(st.body) ? 'Component' : 'Function';
       const id = add(st, name, kind, parent, isExported(st, name), {
         signature: signature(st, st.body),
         async: hasModifier(st, ts.SyntaxKind.AsyncKeyword) || undefined,
@@ -544,8 +675,13 @@ function collectSymbols(
       });
       // Next.js route handlers: app/**/route.ts exporting GET, POST, ...
       const m = /(?:^|\/)app\/(.*\/)?route\.(ts|js|tsx|jsx)$/.exec(rel);
-      if (m && /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/.test(name) && hasModifier(st, ts.SyntaxKind.ExportKeyword)) {
-        const routePath = `/${(m[1] ?? '').replace(/\/$/, '').replace(/\([^)]*\)\/?/g, '')}`.replace(/\/$/, '') || '/';
+      if (
+        m &&
+        /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/.test(name) &&
+        hasModifier(st, ts.SyntaxKind.ExportKeyword)
+      ) {
+        const routePath =
+          `/${(m[1] ?? '').replace(/\/$/, '').replace(/\([^)]*\)\/?/g, '')}`.replace(/\/$/, '') || '/';
         const ep = addEndpoint(st, name, routePath, { framework: 'file-route' });
         extraRefs.push({
           kind: 'ROUTES_TO',
@@ -562,12 +698,22 @@ function collectSymbols(
       const name = st.name?.text ?? 'default';
       visitClass(st, name, parent, isExported(st, name));
     } else if (ts.isInterfaceDeclaration(st)) {
-      add(st, st.name.text, 'Interface', parent, isExported(st, st.name.text), { members: st.members.length });
+      add(st, st.name.text, 'Interface', parent, isExported(st, st.name.text), {
+        members: st.members.length,
+      });
     } else if (ts.isTypeAliasDeclaration(st)) {
       add(st, st.name.text, 'Type', parent, isExported(st, st.name.text));
     } else if (ts.isEnumDeclaration(st)) {
-      add(st, st.name.text, 'Type', parent, isExported(st, st.name.text), { enum: true, members: st.members.length });
-    } else if (ts.isModuleDeclaration(st) && ts.isIdentifier(st.name) && st.body && ts.isModuleBlock(st.body)) {
+      add(st, st.name.text, 'Type', parent, isExported(st, st.name.text), {
+        enum: true,
+        members: st.members.length,
+      });
+    } else if (
+      ts.isModuleDeclaration(st) &&
+      ts.isIdentifier(st.name) &&
+      st.body &&
+      ts.isModuleBlock(st.body)
+    ) {
       const prefix = parent ? `${parent}.${st.name.text}` : st.name.text;
       for (const inner of st.body.statements) visitStatement(inner, prefix);
     } else if (ts.isVariableStatement(st)) {
@@ -575,13 +721,17 @@ function collectSymbols(
       for (const d of st.declarationList.declarations) {
         if (!ts.isIdentifier(d.name)) continue;
         const name = d.name.text;
-        const exported = hasModifier(st, ts.SyntaxKind.ExportKeyword) || exportedNames.has(name) || defaultExportName === name;
+        const exported =
+          hasModifier(st, ts.SyntaxKind.ExportKeyword) ||
+          exportedNames.has(name) ||
+          defaultExportName === name;
         const init = d.initializer;
         const fn = wrappedFunction(init);
         if (init && ts.isClassExpression(init)) {
           visitClass(init, name, parent, exported, d);
         } else if (fn) {
-          const kind: NodeType = isJsxFile && /^[A-Z]/.test(name) && containsJsx(fn.body) ? 'Component' : 'Function';
+          const kind: NodeType =
+            isJsxFile && /^[A-Z]/.test(name) && containsJsx(fn.body) ? 'Component' : 'Function';
           add(d, name, kind, parent, exported, {
             signature: signature(d, fn.body),
             async: hasModifier(fn, ts.SyntaxKind.AsyncKeyword) || undefined,
@@ -593,7 +743,8 @@ function collectSymbols(
           if (init && ts.isCallExpression(init)) {
             const c = init.expression;
             const callee = ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : '';
-            const recv = ts.isPropertyAccessExpression(c) && ts.isIdentifier(c.expression) ? c.expression.text : '';
+            const recv =
+              ts.isPropertyAccessExpression(c) && ts.isIdentifier(c.expression) ? c.expression.text : '';
             const tableLike =
               (TABLE_FACTORIES.has(callee) && callee !== 'model' && callee !== 'define') ||
               (callee === 'model' && /mongoose|models?/i.test(recv)) ||
@@ -610,7 +761,10 @@ function collectSymbols(
       }
     } else if (ts.isExportAssignment(st)) {
       const e = st.expression;
-      if (isFunctionLike(e)) add(st, 'default', isJsxFile && containsJsx(e.body) ? 'Component' : 'Function', parent, true, { signature: signature(st, e.body) });
+      if (isFunctionLike(e))
+        add(st, 'default', isJsxFile && containsJsx(e.body) ? 'Component' : 'Function', parent, true, {
+          signature: signature(st, e.body),
+        });
       else if (ts.isClassExpression(e)) visitClass(e, e.name?.text ?? 'default', parent, true, st);
     }
   };
@@ -620,7 +774,8 @@ function collectSymbols(
   const findRoutes = (n: ts.Node) => {
     if (ts.isCallExpression(n)) {
       const info = routeCallInfo(n);
-      if (info) endpointCalls.set(n, addEndpoint(n, info.method, info.routePath, { framework: 'router-call' }));
+      if (info)
+        endpointCalls.set(n, addEndpoint(n, info.method, info.routePath, { framework: 'router-call' }));
     }
     ts.forEachChild(n, findRoutes);
   };
@@ -653,7 +808,13 @@ function collectReferences(
     return evidenceLine(sf.text.slice(starts[line], starts[line + 1] ?? sf.text.length));
   };
 
-  const addImport = (specNode: ts.Node, specifier: string, names: ImportFact['names'], kind: ImportFact['kind'], stmt: ts.Node) => {
+  const addImport = (
+    specNode: ts.Node,
+    specifier: string,
+    names: ImportFact['names'],
+    kind: ImportFact['kind'],
+    stmt: ts.Node,
+  ) => {
     const r = resolver.resolve(specifier, rel);
     const fact: ImportFact = { specifier, names, kind, location: loc(stmt), evidence: lineText(stmt) };
     if (r.path) fact.resolvedPath = r.path;
@@ -672,14 +833,22 @@ function collectReferences(
       const c = st.importClause;
       if (c?.name) names.push({ imported: 'default', local: c.name.text });
       if (c?.namedBindings) {
-        if (ts.isNamespaceImport(c.namedBindings)) names.push({ imported: '*', local: c.namedBindings.name.text });
-        else for (const el of c.namedBindings.elements) names.push({ imported: (el.propertyName ?? el.name).text, local: el.name.text });
+        if (ts.isNamespaceImport(c.namedBindings))
+          names.push({ imported: '*', local: c.namedBindings.name.text });
+        else
+          for (const el of c.namedBindings.elements)
+            names.push({ imported: (el.propertyName ?? el.name).text, local: el.name.text });
       }
       addImport(st.moduleSpecifier, st.moduleSpecifier.text, names, 'static', st);
-    } else if (ts.isExportDeclaration(st) && st.moduleSpecifier && ts.isStringLiteralLike(st.moduleSpecifier)) {
+    } else if (
+      ts.isExportDeclaration(st) &&
+      st.moduleSpecifier &&
+      ts.isStringLiteralLike(st.moduleSpecifier)
+    ) {
       const names: ImportFact['names'] = [];
       if (st.exportClause && ts.isNamedExports(st.exportClause))
-        for (const el of st.exportClause.elements) names.push({ imported: (el.propertyName ?? el.name).text, local: el.name.text });
+        for (const el of st.exportClause.elements)
+          names.push({ imported: (el.propertyName ?? el.name).text, local: el.name.text });
       else names.push({ imported: '*', local: '*' });
       addImport(st.moduleSpecifier, st.moduleSpecifier.text, names, 'reexport', st);
     }
@@ -713,16 +882,37 @@ function collectReferences(
       // Members of interfaces / classes that are not symbols themselves resolve to their container.
       if (d.parent) {
         const container = declMap.get(d.parent);
-        if (container && (ts.isPropertySignature(d) || ts.isMethodSignature(d) || ts.isPropertyDeclaration(d) || ts.isEnumMember(d)))
-          return { ...container, kind: container.kind, localId: container.localId, path: container.path, member: true } as SymRef & { member: true };
+        if (
+          container &&
+          (ts.isPropertySignature(d) ||
+            ts.isMethodSignature(d) ||
+            ts.isPropertyDeclaration(d) ||
+            ts.isEnumMember(d))
+        )
+          return {
+            ...container,
+            kind: container.kind,
+            localId: container.localId,
+            path: container.path,
+            member: true,
+          } as SymRef & { member: true };
       }
     }
     return 'other';
   };
 
-  const push = (kind: EdgeType, from: string | null, target: SymRef, node: ts.Node, extra?: Record<string, unknown>, confidence = 1, verified = true) => {
+  const push = (
+    kind: EdgeType,
+    from: string | null,
+    target: SymRef,
+    node: ts.Node,
+    extra?: Record<string, unknown>,
+    confidence = 1,
+    verified = true,
+  ) => {
     if (target.path === rel) {
-      if (kind !== 'CALLS' && (from === target.localId || (from && from.startsWith(`${target.localId}.`)))) return;
+      if (kind !== 'CALLS' && (from === target.localId || (from && from.startsWith(`${target.localId}.`))))
+        return;
     }
     const key = `${kind}|${from}|${target.path}#${target.localId}`;
     if (seen.has(key)) return;
@@ -751,19 +941,33 @@ function collectReferences(
     if (!p) return { kind: 'USES' };
     if (ts.isCallExpression(p) && p.expression === cur) return { kind: 'CALLS' };
     if (ts.isNewExpression(p) && p.expression === cur) return { kind: 'INSTANTIATES' };
-    if (ts.isExpressionWithTypeArguments(p) && p.expression === cur && p.parent && ts.isHeritageClause(p.parent)) {
+    if (
+      ts.isExpressionWithTypeArguments(p) &&
+      p.expression === cur &&
+      p.parent &&
+      ts.isHeritageClause(p.parent)
+    ) {
       const clause = p.parent;
       return { kind: clause.token === ts.SyntaxKind.ImplementsKeyword ? 'IMPLEMENTS' : 'EXTENDS' };
     }
-    if ((ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p)) && p.tagName === cur) return { kind: 'USES', extra: { renders: true } };
-    if (ts.isTypeReferenceNode(p) || ts.isTypeQueryNode(p) || ts.isQualifiedName(p)) return { kind: 'USES', extra: { typeOnly: true } };
-    if (ts.isDecorator(p) || (ts.isCallExpression(p) && p.parent && ts.isDecorator(p.parent))) return { kind: 'USES', extra: { decorator: true } };
+    if ((ts.isJsxOpeningElement(p) || ts.isJsxSelfClosingElement(p)) && p.tagName === cur)
+      return { kind: 'USES', extra: { renders: true } };
+    if (ts.isTypeReferenceNode(p) || ts.isTypeQueryNode(p) || ts.isQualifiedName(p))
+      return { kind: 'USES', extra: { typeOnly: true } };
+    if (ts.isDecorator(p) || (ts.isCallExpression(p) && p.parent && ts.isDecorator(p.parent)))
+      return { kind: 'USES', extra: { decorator: true } };
     return { kind: 'USES' };
   };
 
   const rootIdentifier = (e: ts.Expression): ts.Identifier | null => {
     let cur: ts.Expression = e;
-    while (ts.isPropertyAccessExpression(cur) || ts.isCallExpression(cur) || ts.isNonNullExpression(cur) || ts.isAwaitExpression(cur) || ts.isParenthesizedExpression(cur))
+    while (
+      ts.isPropertyAccessExpression(cur) ||
+      ts.isCallExpression(cur) ||
+      ts.isNonNullExpression(cur) ||
+      ts.isAwaitExpression(cur) ||
+      ts.isParenthesizedExpression(cur)
+    )
       cur = cur.expression;
     return ts.isIdentifier(cur) ? cur : null;
   };
@@ -780,8 +984,10 @@ function collectReferences(
       // require('x') / import('x')
       const a0 = node.arguments[0];
       if (a0 && ts.isStringLiteralLike(a0)) {
-        if (ts.isIdentifier(callee) && callee.text === 'require' && node.arguments.length === 1) addImport(a0, a0.text, [{ imported: '*', local: '*' }], 'require', node);
-        else if (callee.kind === ts.SyntaxKind.ImportKeyword) addImport(a0, a0.text, [{ imported: '*', local: '*' }], 'dynamic', node);
+        if (ts.isIdentifier(callee) && callee.text === 'require' && node.arguments.length === 1)
+          addImport(a0, a0.text, [{ imported: '*', local: '*' }], 'require', node);
+        else if (callee.kind === ts.SyntaxKind.ImportKeyword)
+          addImport(a0, a0.text, [{ imported: '*', local: '*' }], 'dynamic', node);
       }
       // Route registration
       const endpoint = endpointCalls.get(node);
@@ -815,12 +1021,25 @@ function collectReferences(
         const rootRef = root ? resolveSymbol(root) : 'other';
         if (typeof rootRef === 'object' && rootRef.kind === 'DatabaseModel') {
           if (DB_WRITE.test(m)) push('WRITES_TO', enclosing, rootRef, node, { operation: m }, 0.8, false);
-          else if (DB_READ.test(m)) push('READS_FROM', enclosing, rootRef, node, { operation: m }, 0.8, false);
+          else if (DB_READ.test(m))
+            push('READS_FROM', enclosing, rootRef, node, { operation: m }, 0.8, false);
         }
-        if (/^(from|into|insert|update|delete|join|leftJoin|innerJoin)$/.test(m) && a0 && ts.isIdentifier(a0)) {
+        if (
+          /^(from|into|insert|update|delete|join|leftJoin|innerJoin)$/.test(m) &&
+          a0 &&
+          ts.isIdentifier(a0)
+        ) {
           const argRef = resolveSymbol(a0);
           if (typeof argRef === 'object' && argRef.kind === 'DatabaseModel')
-            push(/^(from|join|leftJoin|innerJoin)$/.test(m) ? 'READS_FROM' : 'WRITES_TO', enclosing, argRef, node, { operation: m }, 0.8, false);
+            push(
+              /^(from|join|leftJoin|innerJoin)$/.test(m) ? 'READS_FROM' : 'WRITES_TO',
+              enclosing,
+              argRef,
+              node,
+              { operation: m },
+              0.8,
+              false,
+            );
         }
       }
     }
@@ -830,18 +1049,43 @@ function collectReferences(
       const isDeclName =
         p &&
         (p as { name?: ts.Node }).name === node &&
-        (ts.isFunctionDeclaration(p) || ts.isClassDeclaration(p) || ts.isClassExpression(p) || ts.isInterfaceDeclaration(p) || ts.isTypeAliasDeclaration(p) ||
-          ts.isEnumDeclaration(p) || ts.isVariableDeclaration(p) || ts.isParameter(p) || ts.isMethodDeclaration(p) || ts.isPropertyDeclaration(p) ||
-          ts.isPropertySignature(p) || ts.isMethodSignature(p) || ts.isPropertyAssignment(p) || ts.isEnumMember(p) || ts.isModuleDeclaration(p) ||
-          ts.isBindingElement(p) || ts.isTypeParameterDeclaration(p) || ts.isGetAccessorDeclaration(p) || ts.isSetAccessorDeclaration(p) ||
-          ts.isFunctionExpression(p) || ts.isJsxAttribute(p) || ts.isLabeledStatement(p) || ts.isNamedTupleMember(p));
+        (ts.isFunctionDeclaration(p) ||
+          ts.isClassDeclaration(p) ||
+          ts.isClassExpression(p) ||
+          ts.isInterfaceDeclaration(p) ||
+          ts.isTypeAliasDeclaration(p) ||
+          ts.isEnumDeclaration(p) ||
+          ts.isVariableDeclaration(p) ||
+          ts.isParameter(p) ||
+          ts.isMethodDeclaration(p) ||
+          ts.isPropertyDeclaration(p) ||
+          ts.isPropertySignature(p) ||
+          ts.isMethodSignature(p) ||
+          ts.isPropertyAssignment(p) ||
+          ts.isEnumMember(p) ||
+          ts.isModuleDeclaration(p) ||
+          ts.isBindingElement(p) ||
+          ts.isTypeParameterDeclaration(p) ||
+          ts.isGetAccessorDeclaration(p) ||
+          ts.isSetAccessorDeclaration(p) ||
+          ts.isFunctionExpression(p) ||
+          ts.isJsxAttribute(p) ||
+          ts.isLabeledStatement(p) ||
+          ts.isNamedTupleMember(p));
       if (isDeclName) return;
       const r = resolveSymbol(node);
       const { kind, extra } = classify(node);
       if (typeof r === 'object') {
         const member = (r as SymRef & { member?: boolean }).member;
         push(member && kind === 'CALLS' ? 'USES' : kind, enclosing, r, node, extra);
-      } else if (r === 'unknown' && kind === 'CALLS' && p && ts.isCallExpression(p) && p.expression === node && !KNOWN_GLOBALS.has(node.text)) {
+      } else if (
+        r === 'unknown' &&
+        kind === 'CALLS' &&
+        p &&
+        ts.isCallExpression(p) &&
+        p.expression === node &&
+        !KNOWN_GLOBALS.has(node.text)
+      ) {
         const key = `unresolved|${enclosing}|${node.text}`;
         if (!seen.has(key)) {
           seen.add(key);

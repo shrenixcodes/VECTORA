@@ -1,6 +1,12 @@
 import { ChevronRight, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { EDGE_TYPE_LABELS, type EdgeType, type GraphEdge, type GraphNode, isSymbolType } from '@vectora/graph-schema';
+import {
+  EDGE_TYPE_LABELS,
+  type EdgeType,
+  type GraphEdge,
+  type GraphNode,
+  isSymbolType,
+} from '@vectora/graph-schema';
 import { useSource } from '@/lib/api';
 import { fileIdOf, relationsOf } from '@/lib/graphView';
 import { useWorkspace } from '@/lib/store';
@@ -53,7 +59,11 @@ export function Inspector() {
   const isFileLike = node?.type === 'File' || node?.type === 'Configuration';
   const loc = node?.location ?? null;
   const start = loc ? (isFileLike ? 1 : Math.max(1, loc.startLine - 2)) : undefined;
-  const end = loc ? (isFileLike ? Math.min(loc.endLine, 80) : Math.min(loc.endLine + 2, loc.startLine + 120)) : undefined;
+  const end = loc
+    ? isFileLike
+      ? Math.min(loc.endLine, 80)
+      : Math.min(loc.endLine + 2, loc.startLine + 120)
+    : undefined;
   const hasSource = !!node?.filePath && !!loc && (isFileLike || isSymbolType(node.type));
   const source = useSource(repo.id, hasSource ? node!.filePath : null, start, end);
 
@@ -62,7 +72,8 @@ export function Inspector() {
     const startW = width;
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
-    const move = (ev: PointerEvent) => setInspector(true, Math.max(280, Math.min(720, startW + (startX - ev.clientX))));
+    const move = (ev: PointerEvent) =>
+      setInspector(true, Math.max(280, Math.min(720, startW + (startX - ev.clientX))));
     const up = () => {
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
@@ -73,10 +84,20 @@ export function Inspector() {
 
   if (!node || !rel) return null;
   const dependencyText = () => {
-    const lines = [`${node.name} (${node.type}) — ${node.filePath ?? ''}${loc ? `:${loc.startLine}` : ''}`, '', 'Depends on:'];
-    for (const e of rel.outgoing) lines.push(`  ${e.type} ${adj.nodes.get(e.target)?.name ?? e.target}${e.location ? `  (${e.location.path}:${e.location.startLine})` : ''}`);
+    const lines = [
+      `${node.name} (${node.type}) — ${node.filePath ?? ''}${loc ? `:${loc.startLine}` : ''}`,
+      '',
+      'Depends on:',
+    ];
+    for (const e of rel.outgoing)
+      lines.push(
+        `  ${e.type} ${adj.nodes.get(e.target)?.name ?? e.target}${e.location ? `  (${e.location.path}:${e.location.startLine})` : ''}`,
+      );
     lines.push('', 'Used by:');
-    for (const e of rel.incoming) lines.push(`  ${e.type} ${adj.nodes.get(e.source)?.name ?? e.source}${e.location ? `  (${e.location.path}:${e.location.startLine})` : ''}`);
+    for (const e of rel.incoming)
+      lines.push(
+        `  ${e.type} ${adj.nodes.get(e.source)?.name ?? e.source}${e.location ? `  (${e.location.path}:${e.location.startLine})` : ''}`,
+      );
     return lines.join('\n');
   };
   const expandRelationships = () => {
@@ -117,7 +138,10 @@ export function Inspector() {
       <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <TypeMark node={node} />
-          <h2 className="mt-0.5 break-words font-mono text-[0.9375rem] font-medium" data-testid="inspector-name">
+          <h2
+            className="mt-0.5 break-words font-mono text-[0.9375rem] font-medium"
+            data-testid="inspector-name"
+          >
             {node.name}
           </h2>
           {node.filePath ? (
@@ -128,7 +152,11 @@ export function Inspector() {
           ) : null}
           {selectedCount > 1 ? <p className="meta mt-1">{selectedCount} nodes selected</p> : null}
         </div>
-        <IconButton label="Close inspector" className="btn-quiet shrink-0" onClick={() => setInspector(false)}>
+        <IconButton
+          label="Close inspector"
+          className="btn-quiet shrink-0"
+          onClick={() => setInspector(false)}
+        >
           <X size={15} strokeWidth={1.5} />
         </IconButton>
       </header>
@@ -137,14 +165,23 @@ export function Inspector() {
         {node.description ? <p className="mb-4 text-[0.875rem] text-ink-2">{node.description}</p> : null}
 
         <div className="mb-5 flex flex-wrap gap-1.5">
-          <button className="btn btn-sm" aria-pressed={focusId === node.id} onClick={() => setFocus(focusId === node.id ? null : node.id)}>
+          <button
+            className="btn btn-sm"
+            aria-pressed={focusId === node.id}
+            onClick={() => setFocus(focusId === node.id ? null : node.id)}
+          >
             {focusId === node.id ? 'Exit focus' : 'Focus in graph'}
           </button>
           <button className="btn btn-sm" onClick={expandRelationships}>
             Expand relationships
           </button>
           {node.filePath && loc ? (
-            <button className="btn btn-sm" onClick={() => openView('source', `path=${encodeURIComponent(node.filePath!)}&line=${loc.startLine}`)}>
+            <button
+              className="btn btn-sm"
+              onClick={() =>
+                openView('source', `path=${encodeURIComponent(node.filePath!)}&line=${loc.startLine}`)
+              }
+            >
               Open source location
             </button>
           ) : null}
@@ -153,10 +190,16 @@ export function Inspector() {
               Copy path
             </button>
           ) : null}
-          <button className="btn btn-sm" onClick={() => copy(String(node.metadata.qualifiedName ?? node.name), notify, 'Name copied')}>
+          <button
+            className="btn btn-sm"
+            onClick={() => copy(String(node.metadata.qualifiedName ?? node.name), notify, 'Name copied')}
+          >
             Copy symbol name
           </button>
-          <button className="btn btn-sm" onClick={() => copy(dependencyText(), notify, 'Dependencies copied')}>
+          <button
+            className="btn btn-sm"
+            onClick={() => copy(dependencyText(), notify, 'Dependencies copied')}
+          >
             Copy dependency information
           </button>
         </div>
@@ -182,9 +225,11 @@ export function Inspector() {
                   highlight={isFileLike || !loc ? null : { start: loc.startLine, end: loc.endLine }}
                   maxHeight={300}
                 />
-                {source.data.endLine < source.data.totalLines && (isFileLike || (loc && source.data.endLine < loc.endLine)) ? (
+                {source.data.endLine < source.data.totalLines &&
+                (isFileLike || (loc && source.data.endLine < loc.endLine)) ? (
                   <p className="meta mt-1">
-                    Lines {source.data.startLine}–{source.data.endLine} of {source.data.totalLines}. Open the source location for the full file.
+                    Lines {source.data.startLine}–{source.data.endLine} of {source.data.totalLines}. Open the
+                    source location for the full file.
                   </p>
                 ) : null}
               </>
@@ -209,7 +254,9 @@ export function Inspector() {
             {node.metadata.signature ? (
               <>
                 <dt className="text-ink-3">Signature</dt>
-                <dd className="m-0 break-words font-mono text-[0.75rem]">{String(node.metadata.signature)}</dd>
+                <dd className="m-0 break-words font-mono text-[0.75rem]">
+                  {String(node.metadata.signature)}
+                </dd>
               </>
             ) : null}
             {node.metadata.entryPoint ? (
@@ -224,12 +271,24 @@ export function Inspector() {
         {rel.parent ? (
           <Section title="Parent module">
             <NodeRow node={rel.parent} onClick={() => reveal(rel.parent!.id)} />
-            {rel.subsystem && rel.subsystem.id !== rel.parent.id ? <NodeRow node={rel.subsystem} onClick={() => reveal(rel.subsystem!.id)} /> : null}
+            {rel.subsystem && rel.subsystem.id !== rel.parent.id ? (
+              <NodeRow node={rel.subsystem} onClick={() => reveal(rel.subsystem!.id)} />
+            ) : null}
           </Section>
         ) : null}
 
-        <Relationships title="Outgoing relationships" hint="what this node depends on" edges={rel.outgoing} side="target" />
-        <Relationships title="Incoming relationships" hint="what depends on this node" edges={rel.incoming} side="source" />
+        <Relationships
+          title="Outgoing relationships"
+          hint="what this node depends on"
+          edges={rel.outgoing}
+          side="target"
+        />
+        <Relationships
+          title="Incoming relationships"
+          hint="what depends on this node"
+          edges={rel.incoming}
+          side="source"
+        />
 
         {rel.children.length ? (
           <Section title="Contains" count={rel.children.length}>
@@ -241,7 +300,10 @@ export function Inspector() {
         ) : null}
 
         {node.type === 'Concept' || node.type === 'Subsystem' ? (
-          <Section title="Member files" count={(adj.in.get(node.id) ?? []).filter((e) => e.type === 'BELONGS_TO').length}>
+          <Section
+            title="Member files"
+            count={(adj.in.get(node.id) ?? []).filter((e) => e.type === 'BELONGS_TO').length}
+          >
             {(adj.in.get(node.id) ?? [])
               .filter((e) => e.type === 'BELONGS_TO')
               .slice(0, 40)
@@ -290,7 +352,17 @@ function NodeRow({ node, onClick, derived }: { node: GraphNode; onClick: () => v
   );
 }
 
-function Relationships({ title, hint, edges, side }: { title: string; hint: string; edges: GraphEdge[]; side: 'source' | 'target' }) {
+function Relationships({
+  title,
+  hint,
+  edges,
+  side,
+}: {
+  title: string;
+  hint: string;
+  edges: GraphEdge[];
+  side: 'source' | 'target';
+}) {
   const { adj, reveal } = useWs();
   const [open, setOpen] = useState<string | null>(null);
   const groups = useMemo(() => {
@@ -313,10 +385,23 @@ function Relationships({ title, hint, edges, side }: { title: string; hint: stri
               return (
                 <li key={e.id} className="border-b border-line">
                   <div className="flex items-baseline gap-2 py-1.5">
-                    <button type="button" className="btn-quiet -ml-1 cursor-pointer border-0 bg-transparent p-1 text-ink-3" aria-expanded={isOpen} aria-label={`Evidence for ${other?.name ?? e[side]}`} onClick={() => setOpen(isOpen ? null : e.id)}>
-                      <ChevronRight size={12} className={cx('transition-transform duration-200', isOpen && 'rotate-90')} />
+                    <button
+                      type="button"
+                      className="btn-quiet -ml-1 cursor-pointer border-0 bg-transparent p-1 text-ink-3"
+                      aria-expanded={isOpen}
+                      aria-label={`Evidence for ${other?.name ?? e[side]}`}
+                      onClick={() => setOpen(isOpen ? null : e.id)}
+                    >
+                      <ChevronRight
+                        size={12}
+                        className={cx('transition-transform duration-200', isOpen && 'rotate-90')}
+                      />
                     </button>
-                    <button type="button" className="min-w-0 flex-1 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-[0.8125rem] text-ink hover:text-indigo" onClick={() => other && reveal(other.id)}>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-[0.8125rem] text-ink hover:text-indigo"
+                      onClick={() => other && reveal(other.id)}
+                    >
                       {other?.name ?? e[side]}
                     </button>
                     {!e.verified ? <span className="tag tag-derived">derived</span> : null}
@@ -326,7 +411,9 @@ function Relationships({ title, hint, edges, side }: { title: string; hint: stri
                     <div className="mb-2 ml-5 border-l border-line pl-3 text-[0.75rem]">
                       <p className="break-words font-mono text-ink-2">{e.evidence}</p>
                       <p className="meta mt-1">
-                        {e.location ? `${e.location.path}:${e.location.startLine}` : 'no single location'} — {METHOD_LABEL[e.extractionMethod] ?? e.extractionMethod}, {Math.round(e.confidence * 100)}%
+                        {e.location ? `${e.location.path}:${e.location.startLine}` : 'no single location'} —{' '}
+                        {METHOD_LABEL[e.extractionMethod] ?? e.extractionMethod},{' '}
+                        {Math.round(e.confidence * 100)}%
                         {e.metadata?.occurrences ? `, ${String(e.metadata.occurrences)} occurrences` : ''}
                       </p>
                     </div>

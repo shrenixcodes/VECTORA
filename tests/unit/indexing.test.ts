@@ -2,12 +2,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { assignCommunities } from '@vectora/graph-engine';
-import { type GraphEdge, type GraphNode, computeStats, normalizeGraph, validateGraph } from '@vectora/graph-schema';
+import {
+  type GraphEdge,
+  type GraphNode,
+  computeStats,
+  normalizeGraph,
+  validateGraph,
+} from '@vectora/graph-schema';
 import { createAdapters, detectLanguage, looksGenerated } from '@vectora/language-adapters';
-import { chooseSubsystemRoots, indexRepository, isConfigFile, isTestFile, readManifests, scanRepository } from '@vectora/repository-indexer';
+import {
+  chooseSubsystemRoots,
+  indexRepository,
+  isConfigFile,
+  isTestFile,
+  readManifests,
+  scanRepository,
+} from '@vectora/repository-indexer';
 import { SAMPLE, copySample, indexSample, tempDir, writeTree } from '../helpers';
 
-const edge = (g: { edges: GraphEdge[] }, type: string, from: string, to: string) => g.edges.find((e) => e.type === type && e.source.endsWith(from) && e.target.endsWith(to));
+const edge = (g: { edges: GraphEdge[] }, type: string, from: string, to: string) =>
+  g.edges.find((e) => e.type === type && e.source.endsWith(from) && e.target.endsWith(to));
 
 describe('file scanning and ignore handling', () => {
   it('respects .gitignore, skips binaries and reports what it skipped', async () => {
@@ -78,7 +92,9 @@ describe('file scanning and ignore handling', () => {
   it('reads manifests: dependencies, frameworks, entry points and description', async () => {
     const scan = await scanRepository(SAMPLE);
     const m = readManifests(SAMPLE, scan.files);
-    expect(m.dependencies.map((d) => d.name)).toEqual(expect.arrayContaining(['express', 'drizzle-orm', 'fastapi', 'sqlalchemy', 'serde']));
+    expect(m.dependencies.map((d) => d.name)).toEqual(
+      expect.arrayContaining(['express', 'drizzle-orm', 'fastapi', 'sqlalchemy', 'serde']),
+    );
     expect(m.frameworks.map((f) => f.name)).toEqual(expect.arrayContaining(['Express', 'FastAPI', 'React']));
     expect(m.declaredEntryPoints.map((e) => e.path)).toContain('web/src/server.ts');
     expect(m.description).toMatch(/note-taking/);
@@ -90,7 +106,19 @@ describe('syntax and symbol extraction', () => {
   it('exposes one adapter contract for every supported language', () => {
     const adapters = createAdapters();
     const langs = adapters.flatMap((a) => a.languages.map((l) => l.id));
-    expect(langs).toEqual(expect.arrayContaining(['typescript', 'javascript', 'python', 'java', 'go', 'rust', 'c', 'cpp', 'csharp']));
+    expect(langs).toEqual(
+      expect.arrayContaining([
+        'typescript',
+        'javascript',
+        'python',
+        'java',
+        'go',
+        'rust',
+        'c',
+        'cpp',
+        'csharp',
+      ]),
+    );
     for (const a of adapters) expect(typeof a.analyze).toBe('function');
   });
 
@@ -106,12 +134,22 @@ describe('syntax and symbol extraction', () => {
     expect(byId.get('sym:web/src/ui/NoteList.tsx#NoteList')?.type).toBe('Component');
     expect(byId.get('sym:web/src/db/schema.ts#notes')?.type).toBe('DatabaseModel');
     expect(byId.get('sym:web/src/config.ts#DEFAULT_PORT')?.type).toBe('Constant');
-    expect(graph.nodes.filter((n) => n.type === 'ApiEndpoint').map((n) => n.name)).toEqual(expect.arrayContaining(['GET /notes', 'POST /notes', 'POST /login', 'GET /stats', 'POST /events', 'ANY /health']));
+    expect(graph.nodes.filter((n) => n.type === 'ApiEndpoint').map((n) => n.name)).toEqual(
+      expect.arrayContaining([
+        'GET /notes',
+        'POST /notes',
+        'POST /login',
+        'GET /stats',
+        'POST /events',
+        'ANY /health',
+      ]),
+    );
   });
 
   it('extracts symbols from Python, Java, Go, Rust, C and C#', async () => {
     const { graph, analysis } = await indexSample();
-    const has = (id: string, type: GraphNode['type']) => expect(graph.nodes.find((n) => n.id === id)?.type, id).toBe(type);
+    const has = (id: string, type: GraphNode['type']) =>
+      expect(graph.nodes.find((n) => n.id === id)?.type, id).toBe(type);
     has('sym:analytics/app/models.py#Event', 'DatabaseModel');
     has('sym:analytics/app/services/report.py#ReportService.build_report', 'Method');
     has('sym:analytics/app/services/report.py#MAX_ROWS', 'Constant');
@@ -124,14 +162,25 @@ describe('syntax and symbol extraction', () => {
     has('sym:tools/c/util.h#MAX_TITLE', 'Constant');
     has('sym:tools/c/util.c#title_length', 'Function');
     has('sym:tools/csharp/Services/Greeter.cs#Greeter.Greet', 'Method');
-    for (const l of analysis.languages.filter((x) => x.tier > 0)) expect(l.analyzedFiles, l.name).toBe(l.files);
+    for (const l of analysis.languages.filter((x) => x.tier > 0))
+      expect(l.analyzedFiles, l.name).toBe(l.files);
     expect(analysis.parseIssues).toEqual([]);
   });
 
   it('reports syntax errors without failing the index', async () => {
     const dir = tempDir('broken');
-    writeTree(dir, { 'ok.py': 'def fine():\n    return 1\n', 'bad.py': 'def broken(:\n  pass\n', 'bad.go': 'package main\nfunc {{{\n', 'data.xyz': 'unknown file type' });
-    const { graph, analysis } = await indexRepository({ repositoryId: 'b', repositoryName: 'b', rootDir: dir, inProcess: true });
+    writeTree(dir, {
+      'ok.py': 'def fine():\n    return 1\n',
+      'bad.py': 'def broken(:\n  pass\n',
+      'bad.go': 'package main\nfunc {{{\n',
+      'data.xyz': 'unknown file type',
+    });
+    const { graph, analysis } = await indexRepository({
+      repositoryId: 'b',
+      repositoryName: 'b',
+      rootDir: dir,
+      inProcess: true,
+    });
     expect(graph.nodes.some((n) => n.id === 'sym:ok.py#fine')).toBe(true);
     expect(graph.nodes.some((n) => n.id === 'file:bad.py')).toBe(true);
     expect(graph.nodes.some((n) => n.id === 'file:data.xyz')).toBe(true);
@@ -143,7 +192,11 @@ describe('syntax and symbol extraction', () => {
 describe('relationship resolution', () => {
   it('resolves TypeScript calls, imports, inheritance and routes through the type checker', async () => {
     const { graph } = await indexSample();
-    expect(edge(graph, 'CALLS', '#requireAuth', '#verifyToken')).toMatchObject({ verified: true, extractionMethod: 'typescript-checker', confidence: 1 });
+    expect(edge(graph, 'CALLS', '#requireAuth', '#verifyToken')).toMatchObject({
+      verified: true,
+      extractionMethod: 'typescript-checker',
+      confidence: 1,
+    });
     expect(edge(graph, 'IMPORTS', 'web/src/server.ts', 'web/src/config.ts')?.verified).toBe(true);
     expect(edge(graph, 'IMPORTS', 'web/src/server.ts', 'pkg:express')).toBeTruthy();
     expect(edge(graph, 'INSTANTIATES', '#NoteService', '#NoteRepository')).toBeTruthy();
@@ -163,7 +216,10 @@ describe('relationship resolution', () => {
 
   it('marks pattern-based data access as derived, not verified', async () => {
     const { graph } = await indexSample();
-    expect(edge(graph, 'READS_FROM', '#NoteRepository.findByOwner', '#notes')).toMatchObject({ verified: false, extractionMethod: 'pattern' });
+    expect(edge(graph, 'READS_FROM', '#NoteRepository.findByOwner', '#notes')).toMatchObject({
+      verified: false,
+      extractionMethod: 'pattern',
+    });
     expect(edge(graph, 'WRITES_TO', '#ReportService.record', '#Event')).toMatchObject({ verified: false });
   });
 
@@ -176,12 +232,17 @@ describe('relationship resolution', () => {
     expect(edge(graph, 'IMPLEMENTS', '#JsonFormatter', '#Formatter')).toBeTruthy();
     expect(edge(graph, 'CALLS', '#JsonFormatter.format', '#JsonFormatter.escape')).toBeTruthy();
     // A C call resolved by name through an included header is marked as unverified.
-    expect(edge(graph, 'CALLS', 'main.c#main', 'util.c#title_length')).toMatchObject({ verified: false, extractionMethod: 'name-resolution' });
+    expect(edge(graph, 'CALLS', 'main.c#main', 'util.c#title_length')).toMatchObject({
+      verified: false,
+      extractionMethod: 'name-resolution',
+    });
   });
 
   it('never invents a relationship for an undefined name', async () => {
     const { graph, analysis } = await indexSample();
-    expect(graph.edges.some((e) => e.target.includes('undefined_function') || e.target.includes('missing_helper'))).toBe(false);
+    expect(
+      graph.edges.some((e) => e.target.includes('undefined_function') || e.target.includes('missing_helper')),
+    ).toBe(false);
     const names = analysis.unresolvedSamples.map((u) => u.name);
     expect(names).toContain('undefined_function');
     expect(names).toContain('self.missing_helper');
@@ -199,9 +260,16 @@ describe('relationship resolution', () => {
       'c/x.go': 'package c\nfunc Helper() int { return 1 }\n',
       'd/y.go': 'package d\nfunc Run() int { return Helper() }\n',
     });
-    const { graph, analysis } = await indexRepository({ repositoryId: 's', repositoryName: 's', rootDir: dir, inProcess: true });
+    const { graph, analysis } = await indexRepository({
+      repositoryId: 's',
+      repositoryName: 's',
+      rootDir: dir,
+      inProcess: true,
+    });
     expect(graph.edges.filter((e) => e.type === 'CALLS')).toEqual([]);
-    expect(analysis.unresolvedSamples.map((u) => u.name)).toEqual(expect.arrayContaining(['helper', 'Helper']));
+    expect(analysis.unresolvedSamples.map((u) => u.name)).toEqual(
+      expect.arrayContaining(['helper', 'Helper']),
+    );
   });
 });
 
@@ -216,20 +284,76 @@ describe('graph validation', () => {
   });
 
   it('detects duplicates, dangling edges and missing evidence', () => {
-    const n = (id: string): GraphNode => ({ id, name: id, type: 'File', repositoryId: 'r', filePath: id, location: null, language: null, metadata: {}, extractionMethod: 'filesystem', confidence: 1, verified: true });
-    const e = (id: string, s: string, t: string, evidence = 'x'): GraphEdge => ({ id, source: s, target: t, type: 'IMPORTS', evidence, location: null, extractionMethod: 'filesystem', confidence: 1, verified: true });
-    const v = validateGraph({ nodes: [n('a'), n('a'), n('b')], edges: [e('1', 'a', 'b'), e('1', 'a', 'b'), e('2', 'a', 'zzz'), e('3', 'a', 'b', '')] });
+    const n = (id: string): GraphNode => ({
+      id,
+      name: id,
+      type: 'File',
+      repositoryId: 'r',
+      filePath: id,
+      location: null,
+      language: null,
+      metadata: {},
+      extractionMethod: 'filesystem',
+      confidence: 1,
+      verified: true,
+    });
+    const e = (id: string, s: string, t: string, evidence = 'x'): GraphEdge => ({
+      id,
+      source: s,
+      target: t,
+      type: 'IMPORTS',
+      evidence,
+      location: null,
+      extractionMethod: 'filesystem',
+      confidence: 1,
+      verified: true,
+    });
+    const v = validateGraph({
+      nodes: [n('a'), n('a'), n('b')],
+      edges: [e('1', 'a', 'b'), e('1', 'a', 'b'), e('2', 'a', 'zzz'), e('3', 'a', 'b', '')],
+    });
     expect(v.valid).toBe(false);
-    expect(v.issues.map((i) => i.code)).toEqual(expect.arrayContaining(['duplicate-node', 'duplicate-edge', 'dangling-edge', 'missing-evidence']));
+    expect(v.issues.map((i) => i.code)).toEqual(
+      expect.arrayContaining(['duplicate-node', 'duplicate-edge', 'dangling-edge', 'missing-evidence']),
+    );
   });
 
   it('normalises: first node wins, duplicate edges merge, dangling edges are dropped', () => {
-    const n = (id: string, name = id): GraphNode => ({ id, name, type: 'File', repositoryId: 'r', filePath: `.\\${id}`, location: null, language: null, metadata: {}, extractionMethod: 'filesystem', confidence: 1, verified: true });
-    const e = (s: string, t: string, line: number, confidence = 0.5): GraphEdge => ({ id: `CALLS|${s}|${t}`, source: s, target: t, type: 'CALLS', evidence: `l${line}`, location: { path: 'a', startLine: line, endLine: line }, extractionMethod: 'name-resolution', confidence, verified: false });
-    const r = normalizeGraph([n('a', 'first'), n('a', 'second'), n('b')], [e('a', 'b', 1), e('a', 'b', 7, 0.9), e('a', 'gone', 2)]);
+    const n = (id: string, name = id): GraphNode => ({
+      id,
+      name,
+      type: 'File',
+      repositoryId: 'r',
+      filePath: `.\\${id}`,
+      location: null,
+      language: null,
+      metadata: {},
+      extractionMethod: 'filesystem',
+      confidence: 1,
+      verified: true,
+    });
+    const e = (s: string, t: string, line: number, confidence = 0.5): GraphEdge => ({
+      id: `CALLS|${s}|${t}`,
+      source: s,
+      target: t,
+      type: 'CALLS',
+      evidence: `l${line}`,
+      location: { path: 'a', startLine: line, endLine: line },
+      extractionMethod: 'name-resolution',
+      confidence,
+      verified: false,
+    });
+    const r = normalizeGraph(
+      [n('a', 'first'), n('a', 'second'), n('b')],
+      [e('a', 'b', 1), e('a', 'b', 7, 0.9), e('a', 'gone', 2)],
+    );
     expect(r).toMatchObject({ removedNodes: 1, mergedEdges: 1, droppedEdges: 1 });
     expect(r.nodes[0]).toMatchObject({ name: 'first', filePath: 'a' });
-    expect(r.edges[0]).toMatchObject({ evidence: 'l1', confidence: 0.9, metadata: { occurrences: 2, lines: [1, 7] } });
+    expect(r.edges[0]).toMatchObject({
+      evidence: 'l1',
+      confidence: 0.9,
+      metadata: { occurrences: 2, lines: [1, 7] },
+    });
     expect(computeStats(r.nodes, r.edges).unverifiedEdges).toBe(1);
   });
 });
@@ -240,15 +364,38 @@ describe('clustering and organisation', () => {
     const subs = graph.nodes.filter((n) => n.type === 'Subsystem').map((n) => n.name);
     expect(subs).toEqual(expect.arrayContaining(['Web', 'Analytics', 'Tools']));
     const files = graph.nodes.filter((n) => n.type === 'File' || n.type === 'Configuration');
-    for (const f of files) expect(graph.edges.filter((e) => e.type === 'BELONGS_TO' && e.source === f.id && e.target.startsWith('sub:')), f.id).toHaveLength(1);
+    for (const f of files)
+      expect(
+        graph.edges.filter(
+          (e) => e.type === 'BELONGS_TO' && e.source === f.id && e.target.startsWith('sub:'),
+        ),
+        f.id,
+      ).toHaveLength(1);
   });
 
   it('chooses workspace packages or source folders as subsystem roots', () => {
-    const m = { workspacePackages: [{ name: 'a', dir: 'packages/a', entry: null }, { name: 'b', dir: 'packages/b', entry: null }], goModules: [], cargoCrates: [] } as never;
-    expect(chooseSubsystemRoots(['packages/a/x.ts', 'packages/b/y.ts', 'README.md'], m).map((r) => r.dir)).toEqual(['packages/a', 'packages/b']);
+    const m = {
+      workspacePackages: [
+        { name: 'a', dir: 'packages/a', entry: null },
+        { name: 'b', dir: 'packages/b', entry: null },
+      ],
+      goModules: [],
+      cargoCrates: [],
+    } as never;
+    expect(
+      chooseSubsystemRoots(['packages/a/x.ts', 'packages/b/y.ts', 'README.md'], m).map((r) => r.dir),
+    ).toEqual(['packages/a', 'packages/b']);
     const none = { workspacePackages: [], goModules: [], cargoCrates: [] } as never;
-    const files = [...Array.from({ length: 8 }, (_, i) => `src/api/a${i}.ts`), ...Array.from({ length: 8 }, (_, i) => `src/db/d${i}.ts`), 'README.md'];
-    expect(chooseSubsystemRoots(files, none).map((r) => r.dir).sort()).toEqual(['src/api', 'src/db']);
+    const files = [
+      ...Array.from({ length: 8 }, (_, i) => `src/api/a${i}.ts`),
+      ...Array.from({ length: 8 }, (_, i) => `src/db/d${i}.ts`),
+      'README.md',
+    ];
+    expect(
+      chooseSubsystemRoots(files, none)
+        .map((r) => r.dir)
+        .sort(),
+    ).toEqual(['src/api', 'src/db']);
   });
 
   it('derives concepts with evidence and marks them as unverified', async () => {
@@ -256,7 +403,9 @@ describe('clustering and organisation', () => {
     const auth = graph.nodes.find((n) => n.id === 'concept:authentication')!;
     expect(auth).toMatchObject({ verified: false, extractionMethod: 'keyword-evidence' });
     const members = graph.edges.filter((e) => e.type === 'BELONGS_TO' && e.target === auth.id);
-    expect(members.map((e) => e.source)).toEqual(expect.arrayContaining(['file:web/src/auth/session.ts', 'file:web/src/auth/middleware.ts']));
+    expect(members.map((e) => e.source)).toEqual(
+      expect.arrayContaining(['file:web/src/auth/session.ts', 'file:web/src/auth/middleware.ts']),
+    );
     for (const m of members) {
       expect(m.verified).toBe(false);
       expect(m.evidence).toMatch(/path segment|symbol|defines/);
@@ -265,7 +414,9 @@ describe('clustering and organisation', () => {
 
   it('finds entry points and traces request flows to data access', async () => {
     const { analysis } = await indexSample();
-    expect(analysis.entryPoints.map((e) => e.path)).toEqual(expect.arrayContaining(['web/src/server.ts', 'tools/go/main.go']));
+    expect(analysis.entryPoints.map((e) => e.path)).toEqual(
+      expect.arrayContaining(['web/src/server.ts', 'tools/go/main.go']),
+    );
     const flow = analysis.flows.find((f) => f.name === 'GET /notes')!;
     expect(flow.reachesData).toBe(true);
     expect(flow.steps[flow.steps.length - 1]).toBe('sym:web/src/db/schema.ts#notes');
@@ -314,8 +465,17 @@ describe('incremental indexing', () => {
 
   it('runs analysis in worker threads with the same result', async () => {
     const inProcess = await indexSample();
-    const workers = await indexRepository({ repositoryId: 'sample', repositoryName: 'Orbit Notes', rootDir: SAMPLE, concurrency: 2 });
-    expect(workers.graph.nodes.map((n) => n.id).sort()).toEqual(inProcess.graph.nodes.map((n) => n.id).sort());
-    expect(workers.graph.edges.map((e) => e.id).sort()).toEqual(inProcess.graph.edges.map((e) => e.id).sort());
+    const workers = await indexRepository({
+      repositoryId: 'sample',
+      repositoryName: 'Orbit Notes',
+      rootDir: SAMPLE,
+      concurrency: 2,
+    });
+    expect(workers.graph.nodes.map((n) => n.id).sort()).toEqual(
+      inProcess.graph.nodes.map((n) => n.id).sort(),
+    );
+    expect(workers.graph.edges.map((e) => e.id).sort()).toEqual(
+      inProcess.graph.edges.map((e) => e.id).sort(),
+    );
   });
 });

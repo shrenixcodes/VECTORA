@@ -25,10 +25,14 @@ export function createChatCompletionsProvider(cfg: ProviderConfig): NarrativePro
   return {
     async summarize(answer) {
       const url = new URL(cfg.endpoint);
-      if (url.protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) throw new Error('The provider endpoint must use HTTPS');
+      if (url.protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
+        throw new Error('The provider endpoint must use HTTPS');
       const facts = answer.statements
         .slice(0, 60)
-        .map((s, i) => `${i + 1}. ${s.verified ? '[verified]' : '[derived]'} ${s.text}${s.evidence[0] ? ` (${s.evidence[0].path}:${s.evidence[0].startLine})` : ''}`)
+        .map(
+          (s, i) =>
+            `${i + 1}. ${s.verified ? '[verified]' : '[derived]'} ${s.text}${s.evidence[0] ? ` (${s.evidence[0].path}:${s.evidence[0].startLine})` : ''}`,
+        )
         .join('\n');
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 30_000);
@@ -36,7 +40,10 @@ export function createChatCompletionsProvider(cfg: ProviderConfig): NarrativePro
         const res = await (cfg.fetch ?? fetch)(url, {
           method: 'POST',
           signal: controller.signal,
-          headers: { 'content-type': 'application/json', ...(cfg.apiKey ? { authorization: `Bearer ${cfg.apiKey}` } : {}) },
+          headers: {
+            'content-type': 'application/json',
+            ...(cfg.apiKey ? { authorization: `Bearer ${cfg.apiKey}` } : {}),
+          },
           body: JSON.stringify({
             model: cfg.model,
             temperature: 0,
@@ -46,7 +53,10 @@ export function createChatCompletionsProvider(cfg: ProviderConfig): NarrativePro
                 content:
                   'Rewrite the numbered findings about a software repository as a short, plain explanation. Use only the findings. Keep file references. Say clearly which points are derived rather than verified. Do not add anything that is not in the findings.',
               },
-              { role: 'user', content: `Question: ${answer.question}\n\nFindings:\n${facts}\n\nKnown limits:\n${answer.caveats.join('\n') || 'none'}` },
+              {
+                role: 'user',
+                content: `Question: ${answer.question}\n\nFindings:\n${facts}\n\nKnown limits:\n${answer.caveats.join('\n') || 'none'}`,
+              },
             ],
           }),
         });
@@ -62,4 +72,5 @@ export function createChatCompletionsProvider(cfg: ProviderConfig): NarrativePro
   };
 }
 
-export const summarizeWithProvider = (cfg: ProviderConfig, answer: ExplorationAnswer): Promise<string> => createChatCompletionsProvider(cfg).summarize(answer);
+export const summarizeWithProvider = (cfg: ProviderConfig, answer: ExplorationAnswer): Promise<string> =>
+  createChatCompletionsProvider(cfg).summarize(answer);

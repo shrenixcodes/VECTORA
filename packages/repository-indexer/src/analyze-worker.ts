@@ -12,11 +12,20 @@ port.on('message', (req: WorkerRequest) => {
         const now = Date.now();
         if (now - last < 120 && processed !== total) return;
         last = now;
-        port.postMessage({ type: 'progress', taskIndex: req.taskIndex, processed, total } satisfies WorkerResponse);
+        port.postMessage({
+          type: 'progress',
+          taskIndex: req.taskIndex,
+          processed,
+          total,
+        } satisfies WorkerResponse);
       });
       port.postMessage({ type: 'done', taskIndex: req.taskIndex, facts } satisfies WorkerResponse);
     } catch (err) {
-      port.postMessage({ type: 'error', taskIndex: req.taskIndex, message: (err as Error).message } satisfies WorkerResponse);
+      port.postMessage({
+        type: 'error',
+        taskIndex: req.taskIndex,
+        message: (err as Error).message,
+      } satisfies WorkerResponse);
     }
   })();
 });

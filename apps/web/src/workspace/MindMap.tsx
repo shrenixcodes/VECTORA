@@ -1,10 +1,30 @@
 import dagre from '@dagrejs/dagre';
-import { Background, Controls, type Edge, Handle, MiniMap, type Node, type NodeProps, Position, ReactFlow, ReactFlowProvider, getNodesBounds, getViewportForBounds, useReactFlow } from '@xyflow/react';
+import {
+  Background,
+  Controls,
+  type Edge,
+  Handle,
+  MiniMap,
+  type Node,
+  type NodeProps,
+  Position,
+  ReactFlow,
+  ReactFlowProvider,
+  getNodesBounds,
+  getViewportForBounds,
+  useReactFlow,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { toPng, toSvg } from 'html-to-image';
 import { ChevronRight, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { EDGE_TYPES, EDGE_TYPE_LABELS, type EdgeType, type GraphNode, isSymbolType } from '@vectora/graph-schema';
+import {
+  EDGE_TYPES,
+  EDGE_TYPE_LABELS,
+  type EdgeType,
+  type GraphNode,
+  isSymbolType,
+} from '@vectora/graph-schema';
 import { ViewToolbar } from '@/components/ViewControls';
 import { cx } from '@/components/ui';
 import { downloadUrl } from '@/lib/api';
@@ -40,10 +60,24 @@ export function buildTree(adj: Adjacency, hiddenTypes: ReadonlySet<string>): Tre
           .map((e) => adj.nodes.get(e.target))
           .filter((n): n is GraphNode => !!n && isSymbolType(n.type) && !hiddenTypes.has(n.type))
           .sort((a, b) => (a.location?.startLine ?? 0) - (b.location?.startLine ?? 0))
-          .map((n) => ({ key: `${prefix}>${n.id}`, nodeId: n.id, label: n.name, node: n, children: symbolChildren(n.id, prefix, depth + 1) }));
-  const fileItem = (f: GraphNode, prefix: string): TreeItem => ({ key: `${prefix}>${f.id}`, nodeId: f.id, label: f.name, node: f, children: symbolChildren(f.id, prefix) });
+          .map((n) => ({
+            key: `${prefix}>${n.id}`,
+            nodeId: n.id,
+            label: n.name,
+            node: n,
+            children: symbolChildren(n.id, prefix, depth + 1),
+          }));
+  const fileItem = (f: GraphNode, prefix: string): TreeItem => ({
+    key: `${prefix}>${f.id}`,
+    nodeId: f.id,
+    label: f.name,
+    node: f,
+    children: symbolChildren(f.id, prefix),
+  });
 
-  const subsystems = [...adj.nodes.values()].filter((n) => n.type === 'Subsystem').sort((a, b) => Number(b.metadata.files ?? 0) - Number(a.metadata.files ?? 0));
+  const subsystems = [...adj.nodes.values()]
+    .filter((n) => n.type === 'Subsystem')
+    .sort((a, b) => Number(b.metadata.files ?? 0) - Number(a.metadata.files ?? 0));
   const subsystemItems: TreeItem[] = subsystems.map((s) => {
     const base = String(s.filePath ?? '');
     const files = (adj.in.get(s.id) ?? [])
@@ -59,19 +93,32 @@ export function buildTree(adj: Adjacency, hiddenTypes: ReadonlySet<string>): Tre
       const parent = folder(dirOf(rel));
       const full = base ? `${base}/${rel}` : rel;
       const dirNode = adj.nodes.get(`dir:${full}`) ?? null;
-      const item: TreeItem = { key: `${s.id}>dir:${full}`, nodeId: dirNode?.id ?? null, label: rel.slice(rel.lastIndexOf('/') + 1), node: dirNode, children: [] };
+      const item: TreeItem = {
+        key: `${s.id}>dir:${full}`,
+        nodeId: dirNode?.id ?? null,
+        label: rel.slice(rel.lastIndexOf('/') + 1),
+        node: dirNode,
+        children: [],
+      };
       folders.set(rel, item);
       parent.children.push(item);
       return item;
     };
     for (const f of files.sort((a, b) => (a.filePath! < b.filePath! ? -1 : 1))) {
-      const rel = base && f.filePath!.startsWith(`${base}/`) ? f.filePath!.slice(base.length + 1) : f.filePath!;
+      const rel =
+        base && f.filePath!.startsWith(`${base}/`) ? f.filePath!.slice(base.length + 1) : f.filePath!;
       folder(dirOf(rel)).children.push(fileItem(f, s.id));
     }
     // A folder that only holds one folder is merged into it (`src/app` instead of `src` → `app`).
     const squash = (item: TreeItem): TreeItem => {
       item.children = item.children.map(squash);
-      if (item !== root && item.node?.type !== 'File' && item.children.length === 1 && item.children[0]!.children.length && !item.children[0]!.node?.location) {
+      if (
+        item !== root &&
+        item.node?.type !== 'File' &&
+        item.children.length === 1 &&
+        item.children[0]!.children.length &&
+        !item.children[0]!.node?.location
+      ) {
         const only = item.children[0]!;
         return { ...only, label: `${item.label}/${only.label}` };
       }
@@ -105,7 +152,13 @@ export function buildTree(adj: Adjacency, hiddenTypes: ReadonlySet<string>): Tre
           .sort((a, b) => b.children.length - a.children.length),
       }
     : null;
-  return { key: repo.id, nodeId: repo.id, label: repo.name, node: repo, children: [...subsystemItems, ...(conceptBranch ? [conceptBranch] : [])] };
+  return {
+    key: repo.id,
+    nodeId: repo.id,
+    label: repo.name,
+    node: repo,
+    children: [...subsystemItems, ...(conceptBranch ? [conceptBranch] : [])],
+  };
 }
 
 interface MindData extends Record<string, unknown> {
@@ -133,13 +186,28 @@ const MindNode = memo(function MindNode({ data }: NodeProps<Node<MindData>>) {
       data-testid="mind-node"
       data-key={item.key}
     >
-      <Handle type="target" position={Position.Left} className="!h-1 !w-1 !border-0 !bg-transparent" isConnectable={false} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!h-1 !w-1 !border-0 !bg-transparent"
+        isConnectable={false}
+      />
       {item.node ? (
         <span className="meta shrink-0" aria-hidden="true">
           {FAMILY_GLYPH[NODE_FAMILY[item.node.type]]}
         </span>
       ) : null}
-      <span className={cx('truncate', depth === 0 ? 'font-editorial text-[1.0625rem]' : depth === 1 ? 'text-[0.875rem] font-medium' : 'font-mono text-[0.75rem]')} title={item.node?.filePath ?? item.label}>
+      <span
+        className={cx(
+          'truncate',
+          depth === 0
+            ? 'font-editorial text-[1.0625rem]'
+            : depth === 1
+              ? 'text-[0.875rem] font-medium'
+              : 'font-mono text-[0.75rem]',
+        )}
+        title={item.node?.filePath ?? item.label}
+      >
         {item.label}
       </span>
       {count ? (
@@ -154,17 +222,26 @@ const MindNode = memo(function MindNode({ data }: NodeProps<Node<MindData>>) {
           }}
         >
           {count}
-          <ChevronRight size={12} className={cx('transition-transform duration-200', !collapsed && 'rotate-90')} />
+          <ChevronRight
+            size={12}
+            className={cx('transition-transform duration-200', !collapsed && 'rotate-90')}
+          />
         </button>
       ) : null}
-      <Handle type="source" position={Position.Right} className="!h-1 !w-1 !border-0 !bg-transparent" isConnectable={false} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!h-1 !w-1 !border-0 !bg-transparent"
+        isConnectable={false}
+      />
     </div>
   );
 });
 
 const nodeTypes = { mind: MindNode };
 const NODE_H = 34;
-const widthOf = (item: TreeItem, depth: number) => Math.min(300, Math.max(128, item.label.length * (depth === 0 ? 10.5 : depth === 1 ? 9 : 7.6) + 84));
+const widthOf = (item: TreeItem, depth: number) =>
+  Math.min(300, Math.max(128, item.label.length * (depth === 0 ? 10.5 : depth === 1 ? 9 : 7.6) + 84));
 
 function MindMapInner() {
   const { adj, graph, palette, reveal, reducedMotion } = useWs();
@@ -179,7 +256,11 @@ function MindMapInner() {
   const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
 
   // Folders are part of the hierarchy here even when hidden in the other views.
-  const hidden = useMemo(() => new Set(hiddenNodeTypes.filter((t) => t !== 'Directory' && t !== 'Module' && t !== 'Configuration')), [hiddenNodeTypes]);
+  const hidden = useMemo(
+    () =>
+      new Set(hiddenNodeTypes.filter((t) => t !== 'Directory' && t !== 'Module' && t !== 'Configuration')),
+    [hiddenNodeTypes],
+  );
   const tree = useMemo(() => buildTree(adj, hidden), [adj, hidden]);
 
   // Collapsed state: everything below the second level starts collapsed.
@@ -195,7 +276,10 @@ function MindMapInner() {
   const childKeys = useMemo(() => {
     const m = new Map<string, string[]>();
     const walk = (item: TreeItem) => {
-      m.set(item.key, item.children.map((c) => c.key));
+      m.set(
+        item.key,
+        item.children.map((c) => c.key),
+      );
       item.children.forEach(walk);
     };
     if (tree) walk(tree);
@@ -214,7 +298,12 @@ function MindMapInner() {
       if (expanding)
         setTimeout(() => {
           const ids = [key, ...(childKeys.get(key) ?? []).slice(0, 60)].filter((id) => flow.getNode(id));
-          void flow.fitView({ nodes: ids.map((id) => ({ id })), padding: 0.25, maxZoom: flow.getZoom(), duration: reducedMotion ? 0 : 380 });
+          void flow.fitView({
+            nodes: ids.map((id) => ({ id })),
+            padding: 0.25,
+            maxZoom: flow.getZoom(),
+            duration: reducedMotion ? 0 : 380,
+          });
         }, 80);
     },
     [defaultCollapsed, setLayout, childKeys, flow, reducedMotion],
@@ -226,7 +315,8 @@ function MindMapInner() {
     const byNode = new Map<string, string[]>();
     const walk = (item: TreeItem, path: string[]) => {
       pathTo.set(item.key, path);
-      if (item.nodeId) (byNode.get(item.nodeId) ?? byNode.set(item.nodeId, []).get(item.nodeId)!).push(item.key);
+      if (item.nodeId)
+        (byNode.get(item.nodeId) ?? byNode.set(item.nodeId, []).get(item.nodeId)!).push(item.key);
       item.children.forEach((c) => walk(c, [...path, item.key]));
     };
     if (tree) walk(tree, []);
@@ -249,7 +339,8 @@ function MindMapInner() {
     if (q.length < 2 || !tree) return [] as string[];
     const out: string[] = [];
     const walk = (item: TreeItem) => {
-      if (item.label.toLowerCase().includes(q) || item.node?.filePath?.toLowerCase().includes(q)) out.push(item.key);
+      if (item.label.toLowerCase().includes(q) || item.node?.filePath?.toLowerCase().includes(q))
+        out.push(item.key);
       item.children.forEach(walk);
     };
     walk(tree);
@@ -281,27 +372,47 @@ function MindMapInner() {
         id: item.key,
         type: 'mind',
         position: o ? { x: o[0], y: o[1] } : { x: p.x - p.width / 2, y: p.y - p.height / 2 },
-        data: { item, collapsed: collapsed.has(item.key), depth, selected: !!item.nodeId && selected.has(item.nodeId), dimmed: matchSet.size > 0 && !matchSet.has(item.key), matched: matchSet.has(item.key), onToggle: toggle },
+        data: {
+          item,
+          collapsed: collapsed.has(item.key),
+          depth,
+          selected: !!item.nodeId && selected.has(item.nodeId),
+          dimmed: matchSet.size > 0 && !matchSet.has(item.key),
+          matched: matchSet.has(item.key),
+          onToggle: toggle,
+        },
         width: p.width,
         height: p.height,
       };
     });
     const rfEdges: Edge[] = visible
       .filter((v) => v.parent)
-      .map((v) => ({ id: `tree:${v.parent}>${v.item.key}`, source: v.parent!, target: v.item.key, type: 'smoothstep', selectable: false, style: { stroke: palette.ash, strokeWidth: 1, strokeDasharray: v.item.derived ? '4 4' : undefined } }));
+      .map((v) => ({
+        id: `tree:${v.parent}>${v.item.key}`,
+        source: v.parent!,
+        target: v.item.key,
+        type: 'smoothstep',
+        selectable: false,
+        style: { stroke: palette.ash, strokeWidth: 1, strokeDasharray: v.item.derived ? '4 4' : undefined },
+      }));
 
     // Relationship overlay: draw the chosen relationship between visible items,
     // lifting each end to its nearest visible ancestor.
     if (relation) {
       const visibleByNode = new Map<string, string>();
-      for (const v of visible) if (v.item.nodeId && !visibleByNode.has(v.item.nodeId)) visibleByNode.set(v.item.nodeId, v.item.key);
+      for (const v of visible)
+        if (v.item.nodeId && !visibleByNode.has(v.item.nodeId)) visibleByNode.set(v.item.nodeId, v.item.key);
       const lift = (id: string): string | null => {
         let cur: GraphNode | undefined = adj.nodes.get(id);
         for (let i = 0; cur && i < 6; i++) {
           const k = visibleByNode.get(cur.id);
           if (k) return k;
           const parentEdge = (adj.in.get(cur.id) ?? []).find((e) => e.type === 'CONTAINS');
-          cur = parentEdge ? adj.nodes.get(parentEdge.source) : cur.filePath && cur.id !== fileIdOf(cur) ? adj.nodes.get(fileIdOf(cur)!) : undefined;
+          cur = parentEdge
+            ? adj.nodes.get(parentEdge.source)
+            : cur.filePath && cur.id !== fileIdOf(cur)
+              ? adj.nodes.get(fileIdOf(cur)!)
+              : undefined;
         }
         return null;
       };
@@ -328,8 +439,17 @@ function MindMapInner() {
           label: v.count > 1 ? `${EDGE_TYPE_LABELS[relation]} ×${v.count}` : EDGE_TYPE_LABELS[relation],
           labelStyle: { fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, fill: palette.textSecondary },
           labelBgStyle: { fill: palette.canvas },
-          style: { stroke: v.verified ? palette.relationActive : palette.relationUnverified, strokeWidth: 1.2, strokeDasharray: v.verified ? undefined : '5 4' },
-          markerEnd: { type: 'arrowclosed' as never, color: v.verified ? palette.relationActive : palette.relationUnverified, width: 14, height: 14 },
+          style: {
+            stroke: v.verified ? palette.relationActive : palette.relationUnverified,
+            strokeWidth: 1.2,
+            strokeDasharray: v.verified ? undefined : '5 4',
+          },
+          markerEnd: {
+            type: 'arrowclosed' as never,
+            color: v.verified ? palette.relationActive : palette.relationUnverified,
+            width: 14,
+            height: 14,
+          },
           zIndex: 5,
         });
       }
@@ -338,7 +458,11 @@ function MindMapInner() {
   }, [tree, collapsed, selectedIds, matches, layouts.mindmap, palette, relation, adj, graph.edges, toggle]);
 
   // While a branch is being dragged only its position changes; the layout is not recomputed.
-  const displayNodes = useMemo(() => (drag ? nodes.map((n) => (n.id === drag.id ? { ...n, position: { x: drag.x, y: drag.y } } : n)) : nodes), [nodes, drag]);
+  const displayNodes = useMemo(
+    () =>
+      drag ? nodes.map((n) => (n.id === drag.id ? { ...n, position: { x: drag.x, y: drag.y } } : n)) : nodes,
+    [nodes, drag],
+  );
 
   // ---- focus: bring a node into view -------------------------------------
   const centreOn = useCallback(
@@ -346,7 +470,11 @@ function MindMapInner() {
       expandTo(key);
       setTimeout(() => {
         const n = flow.getNode(key);
-        if (n) void flow.setCenter(n.position.x + (n.width ?? 120) / 2, n.position.y + NODE_H / 2, { zoom: Math.max(flow.getZoom(), 0.9), duration: reducedMotion ? 0 : 420 });
+        if (n)
+          void flow.setCenter(n.position.x + (n.width ?? 120) / 2, n.position.y + NODE_H / 2, {
+            zoom: Math.max(flow.getZoom(), 0.9),
+            duration: reducedMotion ? 0 : 420,
+          });
       }, 60);
     },
     [expandTo, flow, reducedMotion],
@@ -371,7 +499,11 @@ function MindMapInner() {
       height,
       // Fonts are bundled with the application; skipping remote font inlining keeps the export offline.
       skipFonts: true,
-      style: { width: `${width}px`, height: `${height}px`, transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})` },
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})`,
+      },
     };
     const url = kind === 'png' ? await toPng(el, options) : await toSvg(el, options);
     downloadUrl(`vectora-mindmap.${kind}`, url);
@@ -396,12 +528,23 @@ function MindMapInner() {
             }
           }}
         />
-        {query.trim().length >= 2 ? <span className="meta bg-canvas/80 px-1">{matches.length} found — Enter focuses the first</span> : null}
+        {query.trim().length >= 2 ? (
+          <span className="meta bg-canvas/80 px-1">{matches.length} found — Enter focuses the first</span>
+        ) : null}
         <label className="btn btn-sm bg-elevated gap-1 pr-1">
           Show relationship
-          <select className="cursor-pointer border-0 bg-transparent text-[0.75rem] text-ink outline-none" value={relation} onChange={(e) => setRelation(e.target.value as EdgeType | '')} data-testid="mind-relation">
+          <select
+            className="cursor-pointer border-0 bg-transparent text-[0.75rem] text-ink outline-none"
+            value={relation}
+            onChange={(e) => setRelation(e.target.value as EdgeType | '')}
+            data-testid="mind-relation"
+          >
             <option value="">none</option>
-            {EDGE_TYPES.filter((t) => !['CONTAINS', 'DEFINED_IN', 'BELONGS_TO', 'EXPORTS'].includes(t) && (graph.stats.edgesByType[t] ?? 0) > 0).map((t) => (
+            {EDGE_TYPES.filter(
+              (t) =>
+                !['CONTAINS', 'DEFINED_IN', 'BELONGS_TO', 'EXPORTS'].includes(t) &&
+                (graph.stats.edgesByType[t] ?? 0) > 0,
+            ).map((t) => (
               <option key={t} value={t}>
                 {EDGE_TYPE_LABELS[t]}
               </option>
@@ -422,7 +565,11 @@ function MindMapInner() {
           <RotateCcw size={13} strokeWidth={1.5} aria-hidden="true" />
           Reset layout
         </button>
-        <button className="btn btn-sm bg-elevated" onClick={() => void exportImage('svg')} data-testid="mind-export-svg">
+        <button
+          className="btn btn-sm bg-elevated"
+          onClick={() => void exportImage('svg')}
+          data-testid="mind-export-svg"
+        >
           <ImageIcon size={13} strokeWidth={1.5} aria-hidden="true" />
           SVG
         </button>
@@ -444,7 +591,8 @@ function MindMapInner() {
         proOptions={{ hideAttribution: false }}
         onNodeClick={(e, n) => {
           const item = (n.data as MindData).item;
-          if (item.nodeId) useWorkspace.getState().select(item.nodeId, { additive: e.ctrlKey || e.metaKey || e.shiftKey });
+          if (item.nodeId)
+            useWorkspace.getState().select(item.nodeId, { additive: e.ctrlKey || e.metaKey || e.shiftKey });
         }}
         onNodeDoubleClick={(_e, n) => {
           const item = (n.data as MindData).item;
@@ -455,7 +603,10 @@ function MindMapInner() {
         onNodeDragStop={(_e, n) => {
           setDrag(null);
           // Rearranged branches keep their position for this workspace.
-          setLayout('mindmap', { ...(useWorkspace.getState().layouts.mindmap ?? {}), [n.id]: [Math.round(n.position.x), Math.round(n.position.y)] });
+          setLayout('mindmap', {
+            ...(useWorkspace.getState().layouts.mindmap ?? {}),
+            [n.id]: [Math.round(n.position.x), Math.round(n.position.y)],
+          });
         }}
         onNodesChange={() => undefined}
         onPaneClick={() => useWorkspace.getState().clearSelection()}
@@ -463,7 +614,15 @@ function MindMapInner() {
       >
         <Background gap={24} size={1} color={palette.line} />
         <Controls showInteractive={false} position="bottom-left" />
-        <MiniMap pannable zoomable nodeColor={palette.ash} nodeStrokeWidth={0} position="bottom-right" className="!hidden sm:!block" ariaLabel="Mind map overview" />
+        <MiniMap
+          pannable
+          zoomable
+          nodeColor={palette.ash}
+          nodeStrokeWidth={0}
+          position="bottom-right"
+          className="!hidden sm:!block"
+          ariaLabel="Mind map overview"
+        />
       </ReactFlow>
     </div>
   );

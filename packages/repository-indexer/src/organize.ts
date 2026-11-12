@@ -32,23 +32,288 @@ export interface OrganizeOutput {
 }
 
 const CONCEPTS: { key: string; name: string; terms: string[]; description: string }[] = [
-  { key: 'authentication', name: 'Authentication', terms: ['auth', 'authentication', 'authorize', 'authorization', 'login', 'logout', 'signin', 'signup', 'session', 'jwt', 'oauth', 'password', 'credential', 'credentials', 'permission', 'token'], description: 'Identity, sessions and access control.' },
-  { key: 'user-management', name: 'User management', terms: ['user', 'users', 'account', 'accounts', 'profile', 'member', 'role', 'roles', 'registration', 'register'], description: 'User accounts, profiles and roles.' },
-  { key: 'payments', name: 'Payment processing', terms: ['payment', 'payments', 'billing', 'invoice', 'checkout', 'stripe', 'subscription', 'cart', 'order', 'orders', 'refund', 'price', 'pricing'], description: 'Orders, billing and payment handling.' },
-  { key: 'data-storage', name: 'Database management', terms: ['database', 'db', 'repository', 'repositories', 'model', 'models', 'schema', 'migration', 'migrations', 'query', 'orm', 'sql', 'sqlite', 'postgres', 'mongo', 'persistence', 'storage', 'store', 'entity', 'entities'], description: 'Persistence, models and data access.' },
-  { key: 'api-layer', name: 'API layer', terms: ['api', 'route', 'routes', 'router', 'controller', 'controllers', 'endpoint', 'endpoints', 'handler', 'handlers', 'rest', 'graphql', 'middleware', 'server', 'http', 'request', 'response'], description: 'Request handling and service interfaces.' },
-  { key: 'interface', name: 'Frontend rendering', terms: ['component', 'components', 'view', 'views', 'page', 'pages', 'ui', 'render', 'layout', 'widget', 'template', 'templates', 'hook', 'hooks', 'screen', 'theme', 'style', 'styles'], description: 'User interface components and presentation.' },
-  { key: 'configuration', name: 'Configuration', terms: ['config', 'configuration', 'settings', 'env', 'options', 'preferences'], description: 'Settings and environment configuration.' },
-  { key: 'infrastructure', name: 'Infrastructure', terms: ['docker', 'deploy', 'deployment', 'ci', 'k8s', 'kubernetes', 'terraform', 'infra', 'infrastructure', 'pipeline', 'build', 'release', 'workflow', 'workflows'], description: 'Build, deployment and operations.' },
-  { key: 'testing', name: 'Testing', terms: ['test', 'tests', 'spec', 'mock', 'mocks', 'fixture', 'fixtures', 'e2e', 'benchmark'], description: 'Automated tests and fixtures.' },
-  { key: 'messaging', name: 'Messaging and events', terms: ['queue', 'event', 'events', 'pubsub', 'kafka', 'email', 'mail', 'notification', 'notifications', 'webhook', 'message', 'broker', 'worker', 'job', 'jobs'], description: 'Asynchronous work, events and notifications.' },
-  { key: 'search', name: 'Search', terms: ['search', 'index', 'indexer', 'indexing', 'lookup', 'ranking'], description: 'Indexing and retrieval.' },
-  { key: 'caching', name: 'Caching', terms: ['cache', 'caching', 'redis', 'memo', 'memoize'], description: 'Caches and memoisation.' },
-  { key: 'observability', name: 'Logging and monitoring', terms: ['log', 'logger', 'logging', 'telemetry', 'metrics', 'tracing', 'monitor', 'monitoring'], description: 'Logs, metrics and diagnostics.' },
-  { key: 'parsing', name: 'Parsing and analysis', terms: ['parser', 'parse', 'ast', 'lexer', 'tokenizer', 'compiler', 'analyzer', 'analysis', 'adapter', 'adapters', 'grammar', 'syntax'], description: 'Parsing, syntax trees and static analysis.' },
-  { key: 'visualization', name: 'Visualisation', terms: ['graph', 'chart', 'canvas', 'visualization', 'visualisation', 'plot', 'diagram', 'scene', 'camera', 'atlas', 'mindmap'], description: 'Graphs, charts and visual rendering.' },
-  { key: 'security', name: 'Security', terms: ['security', 'crypto', 'encrypt', 'encryption', 'decrypt', 'hash', 'sanitize', 'csrf', 'cors', 'secret', 'secrets', 'redact'], description: 'Cryptography and input protection.' },
-  { key: 'import-export', name: 'Import and export', terms: ['import', 'importer', 'export', 'exporter', 'upload', 'download', 'archive', 'zip', 'serialize', 'serializer'], description: 'Moving data in and out of the system.' },
+  {
+    key: 'authentication',
+    name: 'Authentication',
+    terms: [
+      'auth',
+      'authentication',
+      'authorize',
+      'authorization',
+      'login',
+      'logout',
+      'signin',
+      'signup',
+      'session',
+      'jwt',
+      'oauth',
+      'password',
+      'credential',
+      'credentials',
+      'permission',
+      'token',
+    ],
+    description: 'Identity, sessions and access control.',
+  },
+  {
+    key: 'user-management',
+    name: 'User management',
+    terms: [
+      'user',
+      'users',
+      'account',
+      'accounts',
+      'profile',
+      'member',
+      'role',
+      'roles',
+      'registration',
+      'register',
+    ],
+    description: 'User accounts, profiles and roles.',
+  },
+  {
+    key: 'payments',
+    name: 'Payment processing',
+    terms: [
+      'payment',
+      'payments',
+      'billing',
+      'invoice',
+      'checkout',
+      'stripe',
+      'subscription',
+      'cart',
+      'order',
+      'orders',
+      'refund',
+      'price',
+      'pricing',
+    ],
+    description: 'Orders, billing and payment handling.',
+  },
+  {
+    key: 'data-storage',
+    name: 'Database management',
+    terms: [
+      'database',
+      'db',
+      'repository',
+      'repositories',
+      'model',
+      'models',
+      'schema',
+      'migration',
+      'migrations',
+      'query',
+      'orm',
+      'sql',
+      'sqlite',
+      'postgres',
+      'mongo',
+      'persistence',
+      'storage',
+      'store',
+      'entity',
+      'entities',
+    ],
+    description: 'Persistence, models and data access.',
+  },
+  {
+    key: 'api-layer',
+    name: 'API layer',
+    terms: [
+      'api',
+      'route',
+      'routes',
+      'router',
+      'controller',
+      'controllers',
+      'endpoint',
+      'endpoints',
+      'handler',
+      'handlers',
+      'rest',
+      'graphql',
+      'middleware',
+      'server',
+      'http',
+      'request',
+      'response',
+    ],
+    description: 'Request handling and service interfaces.',
+  },
+  {
+    key: 'interface',
+    name: 'Frontend rendering',
+    terms: [
+      'component',
+      'components',
+      'view',
+      'views',
+      'page',
+      'pages',
+      'ui',
+      'render',
+      'layout',
+      'widget',
+      'template',
+      'templates',
+      'hook',
+      'hooks',
+      'screen',
+      'theme',
+      'style',
+      'styles',
+    ],
+    description: 'User interface components and presentation.',
+  },
+  {
+    key: 'configuration',
+    name: 'Configuration',
+    terms: ['config', 'configuration', 'settings', 'env', 'options', 'preferences'],
+    description: 'Settings and environment configuration.',
+  },
+  {
+    key: 'infrastructure',
+    name: 'Infrastructure',
+    terms: [
+      'docker',
+      'deploy',
+      'deployment',
+      'ci',
+      'k8s',
+      'kubernetes',
+      'terraform',
+      'infra',
+      'infrastructure',
+      'pipeline',
+      'build',
+      'release',
+      'workflow',
+      'workflows',
+    ],
+    description: 'Build, deployment and operations.',
+  },
+  {
+    key: 'testing',
+    name: 'Testing',
+    terms: ['test', 'tests', 'spec', 'mock', 'mocks', 'fixture', 'fixtures', 'e2e', 'benchmark'],
+    description: 'Automated tests and fixtures.',
+  },
+  {
+    key: 'messaging',
+    name: 'Messaging and events',
+    terms: [
+      'queue',
+      'event',
+      'events',
+      'pubsub',
+      'kafka',
+      'email',
+      'mail',
+      'notification',
+      'notifications',
+      'webhook',
+      'message',
+      'broker',
+      'worker',
+      'job',
+      'jobs',
+    ],
+    description: 'Asynchronous work, events and notifications.',
+  },
+  {
+    key: 'search',
+    name: 'Search',
+    terms: ['search', 'index', 'indexer', 'indexing', 'lookup', 'ranking'],
+    description: 'Indexing and retrieval.',
+  },
+  {
+    key: 'caching',
+    name: 'Caching',
+    terms: ['cache', 'caching', 'redis', 'memo', 'memoize'],
+    description: 'Caches and memoisation.',
+  },
+  {
+    key: 'observability',
+    name: 'Logging and monitoring',
+    terms: ['log', 'logger', 'logging', 'telemetry', 'metrics', 'tracing', 'monitor', 'monitoring'],
+    description: 'Logs, metrics and diagnostics.',
+  },
+  {
+    key: 'parsing',
+    name: 'Parsing and analysis',
+    terms: [
+      'parser',
+      'parse',
+      'ast',
+      'lexer',
+      'tokenizer',
+      'compiler',
+      'analyzer',
+      'analysis',
+      'adapter',
+      'adapters',
+      'grammar',
+      'syntax',
+    ],
+    description: 'Parsing, syntax trees and static analysis.',
+  },
+  {
+    key: 'visualization',
+    name: 'Visualisation',
+    terms: [
+      'graph',
+      'chart',
+      'canvas',
+      'visualization',
+      'visualisation',
+      'plot',
+      'diagram',
+      'scene',
+      'camera',
+      'atlas',
+      'mindmap',
+    ],
+    description: 'Graphs, charts and visual rendering.',
+  },
+  {
+    key: 'security',
+    name: 'Security',
+    terms: [
+      'security',
+      'crypto',
+      'encrypt',
+      'encryption',
+      'decrypt',
+      'hash',
+      'sanitize',
+      'csrf',
+      'cors',
+      'secret',
+      'secrets',
+      'redact',
+    ],
+    description: 'Cryptography and input protection.',
+  },
+  {
+    key: 'import-export',
+    name: 'Import and export',
+    terms: [
+      'import',
+      'importer',
+      'export',
+      'exporter',
+      'upload',
+      'download',
+      'archive',
+      'zip',
+      'serialize',
+      'serializer',
+    ],
+    description: 'Moving data in and out of the system.',
+  },
 ];
 
 const tokenize = (s: string): string[] =>
@@ -67,9 +332,14 @@ const pretty = (s: string): string =>
     .trim();
 
 /** Chooses the directory prefixes that act as subsystems. */
-export function chooseSubsystemRoots(filePaths: string[], manifests: ManifestInfo): { key: string; name: string; dir: string }[] {
+export function chooseSubsystemRoots(
+  filePaths: string[],
+  manifests: ManifestInfo,
+): { key: string; name: string; dir: string }[] {
   const code = filePaths;
-  const workspace = manifests.workspacePackages.filter((p) => p.dir !== '' && code.some((f) => f.startsWith(`${p.dir}/`)));
+  const workspace = manifests.workspacePackages.filter(
+    (p) => p.dir !== '' && code.some((f) => f.startsWith(`${p.dir}/`)),
+  );
   if (workspace.length >= 2) {
     return workspace
       .filter((p, _, all) => !all.some((o) => o !== p && p.dir.startsWith(`${o.dir}/`)))
@@ -90,7 +360,8 @@ export function chooseSubsystemRoots(filePaths: string[], manifests: ManifestInf
       else counts.set(rest.slice(0, i), (counts.get(rest.slice(0, i)) ?? 0) + 1);
     }
     const dominant = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (dominant && dominant[1] >= total * 0.8 && direct <= total * 0.15 && counts.size <= 4) base = base ? `${base}/${dominant[0]}` : dominant[0];
+    if (dominant && dominant[1] >= total * 0.8 && direct <= total * 0.15 && counts.size <= 4)
+      base = base ? `${base}/${dominant[0]}` : dominant[0];
     else break;
   }
   const groups = new Map<string, number>();
@@ -188,7 +459,8 @@ export function organize(
     });
   }
   // Symbols inherit the subsystem of their file (used for clustering in the views).
-  const fileOf = (n: GraphNode): GraphNode | undefined => (n.filePath ? byId.get(nodeId.file(n.filePath)) : undefined);
+  const fileOf = (n: GraphNode): GraphNode | undefined =>
+    n.filePath ? byId.get(nodeId.file(n.filePath)) : undefined;
   for (const n of baseNodes) if (isSymbolType(n.type)) n.metadata.subsystem = fileOf(n)?.metadata.subsystem;
 
   // ---- aggregated subsystem dependencies ---------------------------------
@@ -199,7 +471,19 @@ export function organize(
   };
   const agg = new Map<string, { count: number; example: GraphEdge; kinds: Record<string, number> }>();
   for (const e of baseEdges) {
-    if (!['IMPORTS', 'CALLS', 'USES', 'EXTENDS', 'IMPLEMENTS', 'INSTANTIATES', 'READS_FROM', 'WRITES_TO'].includes(e.type)) continue;
+    if (
+      ![
+        'IMPORTS',
+        'CALLS',
+        'USES',
+        'EXTENDS',
+        'IMPLEMENTS',
+        'INSTANTIATES',
+        'READS_FROM',
+        'WRITES_TO',
+      ].includes(e.type)
+    )
+      continue;
     const a = subOfNode(e.source);
     const b = subOfNode(e.target);
     if (!a || !b || a === b) continue;
@@ -241,7 +525,9 @@ export function organize(
     (importsByFile.get(e.source) ?? importsByFile.set(e.source, []).get(e.source)!).push(e.target.slice(4));
   }
   const termIndex = new Map<string, number[]>();
-  CONCEPTS.forEach((c, i) => c.terms.forEach((t) => (termIndex.get(t) ?? termIndex.set(t, []).get(t)!).push(i)));
+  CONCEPTS.forEach((c, i) =>
+    c.terms.forEach((t) => (termIndex.get(t) ?? termIndex.set(t, []).get(t)!).push(i)),
+  );
   const members: { fileId: string; score: number; evidence: string[] }[][] = CONCEPTS.map(() => []);
 
   for (const f of fileNodes) {
@@ -255,13 +541,30 @@ export function organize(
     };
     const segs = p.split('/');
     segs.forEach((seg, i) => {
-      for (const t of new Set(tokenize(seg))) for (const ci of termIndex.get(t) ?? []) hit(ci, i === segs.length - 1 ? 2 : 3, `path segment "${seg}"`);
+      for (const t of new Set(tokenize(seg)))
+        for (const ci of termIndex.get(t) ?? [])
+          hit(ci, i === segs.length - 1 ? 2 : 3, `path segment "${seg}"`);
     });
     const seenSym = new Set<string>();
     for (const s of symbolsByFile.get(f.id) ?? []) {
-      if (s.type === 'ApiEndpoint') hit(CONCEPTS.findIndex((c) => c.key === 'api-layer'), 4, `defines endpoint ${s.name}`);
-      else if (s.type === 'DatabaseModel') hit(CONCEPTS.findIndex((c) => c.key === 'data-storage'), 4, `defines model ${s.name}`);
-      else if (s.type === 'Component') hit(CONCEPTS.findIndex((c) => c.key === 'interface'), 2, `defines component ${s.name}`);
+      if (s.type === 'ApiEndpoint')
+        hit(
+          CONCEPTS.findIndex((c) => c.key === 'api-layer'),
+          4,
+          `defines endpoint ${s.name}`,
+        );
+      else if (s.type === 'DatabaseModel')
+        hit(
+          CONCEPTS.findIndex((c) => c.key === 'data-storage'),
+          4,
+          `defines model ${s.name}`,
+        );
+      else if (s.type === 'Component')
+        hit(
+          CONCEPTS.findIndex((c) => c.key === 'interface'),
+          2,
+          `defines component ${s.name}`,
+        );
       for (const t of new Set(tokenize(s.name))) {
         for (const ci of termIndex.get(t) ?? []) {
           const k = `${ci}:${s.name}`;
@@ -271,9 +574,17 @@ export function organize(
         }
       }
     }
-    for (const pkg of importsByFile.get(f.id) ?? []) for (const t of new Set(tokenize(pkg))) for (const ci of termIndex.get(t) ?? []) hit(ci, 1, `imports ${pkg}`);
-    if (f.metadata.test) hit(CONCEPTS.findIndex((c) => c.key === 'testing'), 4, 'test file naming convention');
-    for (const [ci, s] of scores) if (s.score >= 3) members[ci]!.push({ fileId: f.id, score: s.score, evidence: s.evidence });
+    for (const pkg of importsByFile.get(f.id) ?? [])
+      for (const t of new Set(tokenize(pkg)))
+        for (const ci of termIndex.get(t) ?? []) hit(ci, 1, `imports ${pkg}`);
+    if (f.metadata.test)
+      hit(
+        CONCEPTS.findIndex((c) => c.key === 'testing'),
+        4,
+        'test file naming convention',
+      );
+    for (const [ci, s] of scores)
+      if (s.score >= 3) members[ci]!.push({ fileId: f.id, score: s.score, evidence: s.evidence });
   }
 
   const conceptOfFile = new Map<string, string[]>();
@@ -380,15 +691,19 @@ export function organize(
     importers.set(e.target, (importers.get(e.target) ?? 0) + 1);
     importsOut.set(e.source, (importsOut.get(e.source) ?? 0) + 1);
   }
-  const ENTRY_NAME = /^(main|index|app|server|cli|__main__|manage|wsgi|asgi|program|application|start|run)\.(ts|tsx|js|mjs|cjs|py|go|rs|java|cs|c|cpp)$/i;
+  const ENTRY_NAME =
+    /^(main|index|app|server|cli|__main__|manage|wsgi|asgi|program|application|start|run)\.(ts|tsx|js|mjs|cjs|py|go|rs|java|cs|c|cpp)$/i;
   for (const f of fileNodes) {
     if (f.metadata.test || !f.metadata.analyzed) continue;
     const p = f.filePath!;
     const base = p.slice(p.lastIndexOf('/') + 1);
     const depth = p.split('/').length;
-    const hasMain = (symbolsByFile.get(f.id) ?? []).some((s) => s.name === 'main' && !s.metadata.qualifiedName?.toString().includes('.'));
+    const hasMain = (symbolsByFile.get(f.id) ?? []).some(
+      (s) => s.name === 'main' && !s.metadata.qualifiedName?.toString().includes('.'),
+    );
     if (hasMain && /\.(go|rs|c|cpp|java|cs|py)$/.test(p)) addEntry(p, 'defines a main function');
-    else if (ENTRY_NAME.test(base) && depth <= 4 && !importers.has(f.id) && (importsOut.get(f.id) ?? 0) > 0) addEntry(p, 'conventional entry file that nothing else imports');
+    else if (ENTRY_NAME.test(base) && depth <= 4 && !importers.has(f.id) && (importsOut.get(f.id) ?? 0) > 0)
+      addEntry(p, 'conventional entry file that nothing else imports');
   }
 
   // ---- execution flows ----------------------------------------------------
@@ -413,7 +728,11 @@ export function organize(
           parent.set(e.target, id);
           next.push(e.target);
           deepest = e.target;
-          if (e.type === 'READS_FROM' || e.type === 'WRITES_TO' || byId.get(e.target)?.type === 'DatabaseModel') {
+          if (
+            e.type === 'READS_FROM' ||
+            e.type === 'WRITES_TO' ||
+            byId.get(e.target)?.type === 'DatabaseModel'
+          ) {
             dataHit = e.target;
             break;
           }
@@ -429,14 +748,30 @@ export function organize(
   for (const n of baseNodes) {
     if (n.type !== 'ApiEndpoint') continue;
     const t = trace(n.id, 8);
-    if (t.steps.length > 1) flows.push({ id: `flow:${slugify(n.id)}`, name: n.name, kind: 'request', steps: t.steps, reachesData: t.reachesData });
+    if (t.steps.length > 1)
+      flows.push({
+        id: `flow:${slugify(n.id)}`,
+        name: n.name,
+        kind: 'request',
+        steps: t.steps,
+        reachesData: t.reachesData,
+      });
     n.metadata.flowSteps = t.steps.length;
   }
   for (const ep of entryPoints.slice(0, 20)) {
-    const main = (symbolsByFile.get(ep.nodeId) ?? []).find((s) => s.name === 'main' || s.name === 'start' || s.name === 'bootstrap' || s.name === 'run');
+    const main = (symbolsByFile.get(ep.nodeId) ?? []).find(
+      (s) => s.name === 'main' || s.name === 'start' || s.name === 'bootstrap' || s.name === 'run',
+    );
     const start = main?.id ?? ep.nodeId;
     const t = trace(start, 6);
-    if (t.steps.length > 1) flows.push({ id: `flow:${slugify(start)}`, name: `Startup: ${ep.path}`, kind: 'startup', steps: t.steps, reachesData: t.reachesData });
+    if (t.steps.length > 1)
+      flows.push({
+        id: `flow:${slugify(start)}`,
+        name: `Startup: ${ep.path}`,
+        kind: 'startup',
+        steps: t.steps,
+        reachesData: t.reachesData,
+      });
   }
 
   return { nodes, edges, entryPoints, flows };

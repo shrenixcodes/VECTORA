@@ -28,7 +28,8 @@ const NAME = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,99})$/;
 export function parseGitHubUrl(input: string): GitHubRef {
   const raw = input.trim();
   if (!raw) throw new GitHubError('Enter a GitHub repository URL', 400);
-  if (/^[a-z]+:\/\/[^/\s]*@/i.test(raw)) throw new GitHubError('Do not put credentials in the URL. Use the access token field instead.', 400);
+  if (/^[a-z]+:\/\/[^/\s]*@/i.test(raw))
+    throw new GitHubError('Do not put credentials in the URL. Use the access token field instead.', 400);
   let rest: string;
   const ssh = /^git@github\.com:(.+)$/i.exec(raw);
   if (ssh) rest = ssh[1]!;
@@ -39,13 +40,15 @@ export function parseGitHubUrl(input: string): GitHubRef {
     } catch {
       throw new GitHubError('That is not a valid URL', 400);
     }
-    if (!/^(www\.)?github\.com$/i.test(url.hostname)) throw new GitHubError('Only github.com repositories are supported', 400);
+    if (!/^(www\.)?github\.com$/i.test(url.hostname))
+      throw new GitHubError('Only github.com repositories are supported', 400);
     rest = url.pathname.replace(/^\/+/, '');
   } else rest = raw.replace(/^github\.com\//i, '');
   const parts = rest.replace(/\/+$/, '').split('/').filter(Boolean);
   const owner = parts[0];
   const repo = parts[1]?.replace(/\.git$/i, '');
-  if (!owner || !repo || !NAME.test(owner) || !NAME.test(repo)) throw new GitHubError('Expected a repository in the form owner/name', 400);
+  if (!owner || !repo || !NAME.test(owner) || !NAME.test(repo))
+    throw new GitHubError('Expected a repository in the form owner/name', 400);
   let branch: string | null = null;
   let subdirectory: string | null = null;
   if ((parts[2] === 'tree' || parts[2] === 'blob') && parts[3]) {
@@ -86,9 +89,19 @@ export class GitHubClient {
 
   private wrap(err: unknown, hasToken: boolean): GitHubError {
     const status = (err as { status?: number }).status ?? 502;
-    if (status === 404) return new GitHubError(hasToken ? 'Repository not found, or the credential has no access to it' : 'Repository not found. If it is private, add an access token.', 404);
+    if (status === 404)
+      return new GitHubError(
+        hasToken
+          ? 'Repository not found, or the credential has no access to it'
+          : 'Repository not found. If it is private, add an access token.',
+        404,
+      );
     if (status === 401) return new GitHubError('GitHub rejected the access token', 401);
-    if (status === 403 || status === 429) return new GitHubError('GitHub refused the request (rate limit or insufficient permission). An access token raises the limit.', 403);
+    if (status === 403 || status === 429)
+      return new GitHubError(
+        'GitHub refused the request (rate limit or insufficient permission). An access token raises the limit.',
+        403,
+      );
     return new GitHubError(`GitHub could not be reached (${status})`, 502);
   }
 
@@ -97,7 +110,11 @@ export class GitHubClient {
       const { data } = await this.octokit.rest.repos.get({ owner: ref.owner, repo: ref.repo });
       let branches: string[] = [];
       try {
-        const res = await this.octokit.rest.repos.listBranches({ owner: ref.owner, repo: ref.repo, per_page: 100 });
+        const res = await this.octokit.rest.repos.listBranches({
+          owner: ref.owner,
+          repo: ref.repo,
+          per_page: 100,
+        });
         branches = res.data.map((b) => b.name);
       } catch {
         branches = [];
@@ -120,11 +137,21 @@ export class GitHubClient {
   }
 
   /** Downloads the source archive of a branch to `destFile`. */
-  async downloadArchive(ref: Pick<GitHubRef, 'owner' | 'repo'>, branch: string, destFile: string, hasToken = false): Promise<number> {
+  async downloadArchive(
+    ref: Pick<GitHubRef, 'owner' | 'repo'>,
+    branch: string,
+    destFile: string,
+    hasToken = false,
+  ): Promise<number> {
     const info = await this.describe(ref, hasToken);
-    if (info.sizeKb > MAX_REPO_KB) throw new GitHubError('Repository is larger than the 1 GB import limit', 413);
+    if (info.sizeKb > MAX_REPO_KB)
+      throw new GitHubError('Repository is larger than the 1 GB import limit', 413);
     try {
-      const res = await this.octokit.request('GET /repos/{owner}/{repo}/zipball/{ref}', { owner: ref.owner, repo: ref.repo, ref: branch });
+      const res = await this.octokit.request('GET /repos/{owner}/{repo}/zipball/{ref}', {
+        owner: ref.owner,
+        repo: ref.repo,
+        ref: branch,
+      });
       const buf = Buffer.from(res.data as ArrayBuffer);
       fs.writeFileSync(destFile, buf);
       return buf.length;

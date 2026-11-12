@@ -152,7 +152,9 @@
     text-decoration-color: var(--line);
     text-underline-offset: 0.22em;
     text-decoration-thickness: 1px;
-    transition: text-decoration-color var(--duration-ui) var(--ease), color var(--duration-ui) var(--ease);
+    transition:
+      text-decoration-color var(--duration-ui) var(--ease),
+      color var(--duration-ui) var(--ease);
   }
   a:hover {
     text-decoration-color: currentColor;
@@ -331,7 +333,9 @@
     text-align: left;
     cursor: pointer;
     text-decoration: none;
-    transition: padding-left var(--duration-ui) var(--ease), color var(--duration-ui) var(--ease);
+    transition:
+      padding-left var(--duration-ui) var(--ease),
+      color var(--duration-ui) var(--ease);
   }
   .link-row:hover {
     padding-left: 6px;

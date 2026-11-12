@@ -33,7 +33,8 @@ async function openWorkspace(page: Page): Promise<void> {
   repoPath = new URL(page.url()).pathname;
 }
 
-const nav = (page: Page, name: string) => page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true });
+const nav = (page: Page, name: string) =>
+  page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name, exact: true });
 
 async function selectBySearch(page: Page, query: string): Promise<void> {
   await page.keyboard.press('Control+k');
@@ -52,7 +53,13 @@ test('landing page presents the brand and leads to the import screen @responsive
   await expect(page).toHaveTitle(/VECTORA/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Understand what connects.');
   await expect(page.getByText('Explore the hidden architecture of software.')).toBeVisible();
-  for (const h of ['How it works', 'One graph, three ways to read it', 'Supported sources', 'Your code stays on your machine']) await expect(page.getByRole('heading', { name: h })).toBeVisible();
+  for (const h of [
+    'How it works',
+    'One graph, three ways to read it',
+    'Supported sources',
+    'Your code stays on your machine',
+  ])
+    await expect(page.getByRole('heading', { name: h })).toBeVisible();
   // No horizontal scrolling at any width.
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.getByRole('link', { name: 'Learn about VECTORA' }).click();
@@ -65,7 +72,9 @@ test('landing page presents the brand and leads to the import screen @responsive
   expect(problems).toEqual([]);
 });
 
-test('repository import: three methods, validation messages and the sample import @responsive', async ({ page }) => {
+test('repository import: three methods, validation messages and the sample import @responsive', async ({
+  page,
+}) => {
   const problems = watch(page);
   await page.goto('/import');
   // GitHub: a malformed reference is explained without leaving the page.
@@ -74,7 +83,13 @@ test('repository import: three methods, validation messages and the sample impor
   await expect(page.getByRole('alert')).toContainText('Only github.com repositories are supported');
   // ZIP: a file that is not an archive is rejected with a reason.
   await page.getByRole('tab', { name: 'ZIP archive' }).click();
-  await page.locator('#zip-file').setInputFiles({ name: 'notes.zip', mimeType: 'application/zip', buffer: Buffer.from('plain text pretending to be an archive') });
+  await page
+    .locator('#zip-file')
+    .setInputFiles({
+      name: 'notes.zip',
+      mimeType: 'application/zip',
+      buffer: Buffer.from('plain text pretending to be an archive'),
+    });
   await expect(page.getByRole('alert')).toContainText('not a ZIP archive');
   // Local: a missing folder is reported.
   await page.getByRole('tab', { name: 'Local folder' }).click();
@@ -134,7 +149,9 @@ test('search, graph selection and node inspection with original source', async (
   await expect(inspector).toContainText('TypeScript compiler');
   await expect(inspector).toContainText('Verified from source');
   // The original source is shown, read from the repository.
-  await expect(inspector.getByTestId('code-preview')).toContainText('export function verifyToken(token: string): Session | null');
+  await expect(inspector.getByTestId('code-preview')).toContainText(
+    'export function verifyToken(token: string): Session | null',
+  );
   // Relationships with their evidence.
   await expect(inspector).toContainText('Incoming relationships');
   await inspector.getByRole('button', { name: 'Evidence for requireAuth' }).click();
@@ -155,11 +172,18 @@ test('search, graph selection and node inspection with original source', async (
   // Open the full source location.
   await inspector.getByRole('button', { name: 'Open source location' }).click();
   await expect(page.getByTestId('source-view')).toContainText('web/src/auth/middleware.ts');
-  await expect(page.getByTestId('source-view').getByTestId('code-preview')).toContainText('export function requireAuth');
+  await expect(page.getByTestId('source-view').getByTestId('code-preview')).toContainText(
+    'export function requireAuth',
+  );
 
   // Filters: hiding a node type changes the node count shown in the toolbar.
   await nav(page, 'Graph Explorer').click();
-  const count = async () => Number(/([\d,]+) nodes/.exec((await page.getByRole('status').filter({ hasText: 'nodes' }).first().textContent()) ?? '')?.[1]?.replace(/,/g, ''));
+  const count = async () =>
+    Number(
+      /([\d,]+) nodes/
+        .exec((await page.getByRole('status').filter({ hasText: 'nodes' }).first().textContent()) ?? '')?.[1]
+        ?.replace(/,/g, ''),
+    );
   const before = await count();
   await page.getByTestId('filters-button').click();
   await page.getByRole('checkbox', { name: /^.?\s*Function/ }).uncheck();
@@ -186,12 +210,18 @@ test('the three views share one graph and one selection', async ({ page }) => {
   await expect(atlas.or(page.getByTestId('atlas-fallback')).first()).toBeVisible();
   if (await atlas.isVisible().catch(() => false)) {
     await expect(atlas.locator('canvas')).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: 'nodes' }).first()).toHaveText(graphCount!.replace(/ — arranging$/, ''), { timeout: 20_000 });
+    await expect(page.getByRole('status').filter({ hasText: 'nodes' }).first()).toHaveText(
+      graphCount!.replace(/ — arranging$/, ''),
+      { timeout: 20_000 },
+    );
     const crumb = page.getByTestId('atlas-breadcrumb');
     await expect(crumb).toContainText('Orbit Notes (sample)');
     await expect(crumb).toContainText('Web');
     await expect(crumb).toContainText('noteRepository.ts');
-    await expect(crumb.getByRole('button', { name: 'NoteRepository', exact: true })).toHaveAttribute('aria-current', 'location');
+    await expect(crumb.getByRole('button', { name: 'NoteRepository', exact: true })).toHaveAttribute(
+      'aria-current',
+      'location',
+    );
     // Camera interaction: orbit by dragging, zoom with the wheel, then reset.
     const box = (await atlas.locator('canvas').boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -217,7 +247,9 @@ test('the three views share one graph and one selection', async ({ page }) => {
   await nav(page, 'Mind Map').click();
   await expect(page.getByTestId('inspector-name')).toHaveText('createSession');
   const map = page.getByTestId('mindmap');
-  await expect(map.getByTestId('mind-node').filter({ hasText: 'Orbit Notes (sample)' }).first()).toBeVisible();
+  await expect(
+    map.getByTestId('mind-node').filter({ hasText: 'Orbit Notes (sample)' }).first(),
+  ).toBeVisible();
   expect(problems).toEqual([]);
 });
 
@@ -319,16 +351,22 @@ test('settings persist and take effect; themes; export; saved workspace is resto
   await nav(page, 'Settings').click();
   await page.getByLabel('Theme', { exact: true }).selectOption('dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe('rgb(23, 24, 22)');
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+    .toBe('rgb(23, 24, 22)');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByLabel('Theme', { exact: true }).selectOption('light');
-  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe('rgb(248, 247, 242)');
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+    .toBe('rgb(248, 247, 242)');
 
   // Node density changes what the graph shows.
   await page.getByLabel('Node density').selectOption('structure');
   await nav(page, 'Graph Explorer').click();
-  await expect(page.getByRole('status').filter({ hasText: 'nodes' }).first()).toContainText('symbols folded into their files');
+  await expect(page.getByRole('status').filter({ hasText: 'nodes' }).first()).toContainText(
+    'symbols folded into their files',
+  );
   await nav(page, 'Settings').click();
   await page.getByLabel('Node density').selectOption('full');
   await nav(page, 'Graph Explorer').click();
@@ -348,7 +386,11 @@ test('settings persist and take effect; themes; export; saved workspace is resto
   await page.getByTestId('export-json').click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/\.vectora\.json$/);
-  const exported = JSON.parse(fs.readFileSync((await file.path())!, 'utf8')) as { nodes: { id: string }[]; edges: unknown[]; includesSource: boolean };
+  const exported = JSON.parse(fs.readFileSync((await file.path())!, 'utf8')) as {
+    nodes: { id: string }[];
+    edges: unknown[];
+    includesSource: boolean;
+  };
   expect(exported.includesSource).toBe(false);
   expect(exported.nodes.map((n) => n.id)).toContain('sym:web/src/auth/session.ts#verifyToken');
   expect(exported.edges.length).toBeGreaterThan(300);
@@ -380,14 +422,36 @@ test('keyboard access, landmarks and accessible names @responsive', async ({ pag
     await page.goto(`${repoPath}/${view}`);
     await page.waitForLoadState('networkidle');
     const audit = await page.evaluate(() => {
-      const name = (el: Element) => (el.getAttribute('aria-label') ?? el.getAttribute('title') ?? el.textContent ?? '').trim() || (el.getAttribute('aria-labelledby') || (el as HTMLButtonElement).labels?.length ? 'labelled' : '');
-      const unnamed = [...document.querySelectorAll('button, a[href], [role="tab"]')].filter((el) => !name(el)).map((el) => el.outerHTML.slice(0, 120));
-      const unlabelled = [...document.querySelectorAll('input:not([type="hidden"]), select, textarea')]
-        .filter((el) => !(el as HTMLInputElement).labels?.length && !el.getAttribute('aria-label') && !el.getAttribute('aria-labelledby') && !el.closest('label'))
+      const name = (el: Element) =>
+        (el.getAttribute('aria-label') ?? el.getAttribute('title') ?? el.textContent ?? '').trim() ||
+        (el.getAttribute('aria-labelledby') || (el as HTMLButtonElement).labels?.length ? 'labelled' : '');
+      const unnamed = [...document.querySelectorAll('button, a[href], [role="tab"]')]
+        .filter((el) => !name(el))
         .map((el) => el.outerHTML.slice(0, 120));
-      return { unnamed, unlabelled, h1: document.querySelectorAll('h1').length, main: document.querySelectorAll('main').length, imagesWithoutAlt: [...document.querySelectorAll('img')].filter((i) => !i.hasAttribute('alt')).length };
+      const unlabelled = [...document.querySelectorAll('input:not([type="hidden"]), select, textarea')]
+        .filter(
+          (el) =>
+            !(el as HTMLInputElement).labels?.length &&
+            !el.getAttribute('aria-label') &&
+            !el.getAttribute('aria-labelledby') &&
+            !el.closest('label'),
+        )
+        .map((el) => el.outerHTML.slice(0, 120));
+      return {
+        unnamed,
+        unlabelled,
+        h1: document.querySelectorAll('h1').length,
+        main: document.querySelectorAll('main').length,
+        imagesWithoutAlt: [...document.querySelectorAll('img')].filter((i) => !i.hasAttribute('alt')).length,
+      };
     });
-    expect(audit, `view "${view}"`).toEqual({ unnamed: [], unlabelled: [], h1: 1, main: 1, imagesWithoutAlt: 0 });
+    expect(audit, `view "${view}"`).toEqual({
+      unnamed: [],
+      unlabelled: [],
+      h1: 1,
+      main: 1,
+      imagesWithoutAlt: 0,
+    });
   }
 
   // Command palette: opens with the shortcut, traps focus, closes with Escape and returns to the page.
@@ -412,7 +476,9 @@ test('respects the reduced-motion preference of the system', async ({ browser })
   await page.goto('/');
   // With no stored choice the system colour scheme is followed.
   await expect(page.locator('html')).toHaveAttribute('data-theme', /dark|light/);
-  const duration = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--duration-ui').trim());
+  const duration = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--duration-ui').trim(),
+  );
   expect(duration).toMatch(/^0(ms|s)$/);
   await page.goto(`${repoPath}/graph`);
   await expect(page.getByTestId('graph-explorer').locator('canvas').first()).toBeVisible();

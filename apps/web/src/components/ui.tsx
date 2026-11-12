@@ -5,7 +5,8 @@ import type { GraphNode } from '@vectora/graph-schema';
 import { NODE_TYPE_LABELS } from '@vectora/graph-schema';
 import { FAMILY_GLYPH, NODE_FAMILY } from '@/lib/tokens';
 
-export const cx = (...parts: (string | false | null | undefined)[]): string => parts.filter(Boolean).join(' ');
+export const cx = (...parts: (string | false | null | undefined)[]): string =>
+  parts.filter(Boolean).join(' ');
 
 /** The brand wordmark. */
 export function Wordmark({ className }: { className?: string }) {
@@ -16,16 +17,38 @@ export function Wordmark({ className }: { className?: string }) {
   );
 }
 
-export function Dialog({ open, onOpenChange, title, description, children, wide }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string; children: ReactNode; wide?: boolean }) {
+export function Dialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  wide,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  title: string;
+  description?: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
         <RDialog.Overlay className="overlay" />
-        <RDialog.Content className="dialog" style={wide ? { width: 'min(820px, calc(100vw - 32px))' } : undefined} aria-describedby={description ? undefined : undefined}>
+        <RDialog.Content
+          className="dialog"
+          style={wide ? { width: 'min(820px, calc(100vw - 32px))' } : undefined}
+          aria-describedby={description ? undefined : undefined}
+        >
           <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
             <div>
               <RDialog.Title className="font-editorial text-[1.25rem]">{title}</RDialog.Title>
-              {description ? <RDialog.Description className="label mt-1">{description}</RDialog.Description> : <RDialog.Description className="sr-only">{title}</RDialog.Description>}
+              {description ? (
+                <RDialog.Description className="label mt-1">{description}</RDialog.Description>
+              ) : (
+                <RDialog.Description className="sr-only">{title}</RDialog.Description>
+              )}
             </div>
             <RDialog.Close className="btn btn-quiet btn-icon" aria-label="Close">
               <X size={16} strokeWidth={1.5} />
@@ -38,7 +61,17 @@ export function Dialog({ open, onOpenChange, title, description, children, wide 
   );
 }
 
-export function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+export function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  hint?: string;
+}) {
   const id = useId();
   return (
     <div className="flex items-start justify-between gap-6 py-2">
@@ -58,7 +91,19 @@ export function Toggle({ checked, onChange, label, hint }: { checked: boolean; o
   );
 }
 
-export function SelectField<T extends string>({ label, hint, value, onChange, options }: { label: string; hint?: string; value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+export function SelectField<T extends string>({
+  label,
+  hint,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  hint?: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+}) {
   const id = useId();
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-2">
@@ -66,7 +111,12 @@ export function SelectField<T extends string>({ label, hint, value, onChange, op
         <span className="block text-[0.9375rem]">{label}</span>
         {hint ? <span className="label block max-w-[46ch]">{hint}</span> : null}
       </label>
-      <select id={id} className="field w-auto min-w-[168px]" value={value} onChange={(e) => onChange(e.target.value as T)}>
+      <select
+        id={id}
+        className="field w-auto min-w-[168px]"
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+      >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -77,7 +127,25 @@ export function SelectField<T extends string>({ label, hint, value, onChange, op
   );
 }
 
-export function NumberField({ label, hint, value, onChange, min, max, step = 1, unit }: { label: string; hint?: string; value: number; onChange: (v: number) => void; min: number; max: number; step?: number; unit?: string }) {
+export function NumberField({
+  label,
+  hint,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit,
+}: {
+  label: string;
+  hint?: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+}) {
   const id = useId();
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 py-2">
@@ -110,16 +178,40 @@ export function TypeMark({ node, showLabel = true }: { node: Pick<GraphNode, 'ty
   return (
     <span className="meta inline-flex items-center gap-1.5 whitespace-nowrap">
       <span aria-hidden="true">{FAMILY_GLYPH[NODE_FAMILY[node.type]]}</span>
-      {showLabel ? NODE_TYPE_LABELS[node.type] : <span className="sr-only">{NODE_TYPE_LABELS[node.type]}</span>}
+      {showLabel ? (
+        NODE_TYPE_LABELS[node.type]
+      ) : (
+        <span className="sr-only">{NODE_TYPE_LABELS[node.type]}</span>
+      )}
     </span>
   );
 }
 
-export function Notice({ tone = 'info', children, action }: { tone?: 'info' | 'error' | 'warning' | 'success'; children: ReactNode; action?: ReactNode }) {
-  const color = tone === 'error' ? 'var(--error)' : tone === 'warning' ? 'var(--warning)' : tone === 'success' ? 'var(--success)' : 'var(--indigo)';
-  const word = tone === 'error' ? 'Error' : tone === 'warning' ? 'Note' : tone === 'success' ? 'Done' : 'Info';
+export function Notice({
+  tone = 'info',
+  children,
+  action,
+}: {
+  tone?: 'info' | 'error' | 'warning' | 'success';
+  children: ReactNode;
+  action?: ReactNode;
+}) {
+  const color =
+    tone === 'error'
+      ? 'var(--error)'
+      : tone === 'warning'
+        ? 'var(--warning)'
+        : tone === 'success'
+          ? 'var(--success)'
+          : 'var(--indigo)';
+  const word =
+    tone === 'error' ? 'Error' : tone === 'warning' ? 'Note' : tone === 'success' ? 'Done' : 'Info';
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className="flex items-start justify-between gap-4 border-l-2 bg-surface px-4 py-3 text-[0.875rem]" style={{ borderColor: color }}>
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className="flex items-start justify-between gap-4 border-l-2 bg-surface px-4 py-3 text-[0.875rem]"
+      style={{ borderColor: color }}
+    >
       <p>
         <span className="font-medium" style={{ color }}>
           {word}.
@@ -148,7 +240,15 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
   );
 }
 
-export function SectionHeading({ children, aside, id }: { children: ReactNode; aside?: ReactNode; id?: string }) {
+export function SectionHeading({
+  children,
+  aside,
+  id,
+}: {
+  children: ReactNode;
+  aside?: ReactNode;
+  id?: string;
+}) {
   return (
     <div className="mb-4 flex items-baseline justify-between gap-4 border-b border-line pb-2">
       <h2 id={id} className="font-editorial text-[1.25rem]">
@@ -159,9 +259,20 @@ export function SectionHeading({ children, aside, id }: { children: ReactNode; a
   );
 }
 
-export function IconButton({ label, children, className, ...rest }: { label: string; children: ReactNode } & ComponentProps<'button'>) {
+export function IconButton({
+  label,
+  children,
+  className,
+  ...rest
+}: { label: string; children: ReactNode } & ComponentProps<'button'>) {
   return (
-    <button type="button" {...rest} className={cx('btn btn-icon', className)} aria-label={label} title={label}>
+    <button
+      type="button"
+      {...rest}
+      className={cx('btn btn-icon', className)}
+      aria-label={label}
+      title={label}
+    >
       {children}
     </button>
   );

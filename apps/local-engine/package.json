@@ -11,7 +11,7 @@
   "dependencies": {
     "@fastify/cors": "^11.4.1",
     "@fastify/multipart": "^10.1.8",
-    "@fastify/static": "^9.0.0",
+    "@fastify/static": "^10.1.10",
     "@vectora/graph-engine": "*",
     "@vectora/graph-schema": "*",
     "@vectora/language-adapters": "*",

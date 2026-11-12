@@ -20,7 +20,13 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   const child: ChildProcess = spawn(process.execPath, [server], {
     cwd: root,
     stdio: ['ignore', 'inherit', 'inherit'],
-    env: { ...process.env, VECTORA_PORT: String(E2E_PORT), VECTORA_DATA_DIR: dataDir, VECTORA_LOG_LEVEL: 'warn', NODE_ENV: 'production' },
+    env: {
+      ...process.env,
+      VECTORA_PORT: String(E2E_PORT),
+      VECTORA_DATA_DIR: dataDir,
+      VECTORA_LOG_LEVEL: 'warn',
+      NODE_ENV: 'production',
+    },
   });
   let exited = false;
   child.on('exit', () => (exited = true));

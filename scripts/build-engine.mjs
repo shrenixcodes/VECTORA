@@ -22,11 +22,21 @@ const common = {
   legalComments: 'none',
   define: { 'process.env.NODE_ENV': '"production"' },
   // Some dependencies are CommonJS and expect `require` to exist.
-  banner: { js: "import { createRequire as __vectoraCreateRequire } from 'node:module'; const require = __vectoraCreateRequire(import.meta.url);" },
+  banner: {
+    js: "import { createRequire as __vectoraCreateRequire } from 'node:module'; const require = __vectoraCreateRequire(import.meta.url);",
+  },
   logLevel: 'warning',
 };
-await build({ ...common, entryPoints: [path.join(root, 'apps/local-engine/src/main.ts')], outfile: path.join(out, 'server.mjs') });
-await build({ ...common, entryPoints: [path.join(root, 'packages/repository-indexer/src/analyze-worker.ts')], outfile: path.join(out, 'analyze-worker.mjs') });
+await build({
+  ...common,
+  entryPoints: [path.join(root, 'apps/local-engine/src/main.ts')],
+  outfile: path.join(out, 'server.mjs'),
+});
+await build({
+  ...common,
+  entryPoints: [path.join(root, 'packages/repository-indexer/src/analyze-worker.ts')],
+  outfile: path.join(out, 'analyze-worker.mjs'),
+});
 
 const copy = (from, to) => fs.cpSync(path.join(root, from), path.join(out, to), { recursive: true });
 copy('packages/language-adapters/grammars', 'grammars');
@@ -34,4 +44,6 @@ copy('packages/language-adapters/python', 'python');
 fs.rmSync(path.join(out, 'python', '__pycache__'), { recursive: true, force: true });
 
 const size = (f) => `${(fs.statSync(path.join(out, f)).size / 1024).toFixed(0)} kB`;
-console.log(`engine bundle: dist/engine/server.mjs (${size('server.mjs')}), analyze-worker.mjs (${size('analyze-worker.mjs')})`);
+console.log(
+  `engine bundle: dist/engine/server.mjs (${size('server.mjs')}), analyze-worker.mjs (${size('analyze-worker.mjs')})`,
+);

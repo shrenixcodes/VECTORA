@@ -15,7 +15,10 @@ export function Documentation() {
   const generated = params.get('generated');
   const path = params.get('path');
   useEffect(() => {
-    if (!path && !generated && docs.data) setParams(docs.data[0] ? { path: docs.data[0].path } : { generated: 'architecture' }, { replace: true });
+    if (!path && !generated && docs.data)
+      setParams(docs.data[0] ? { path: docs.data[0].path } : { generated: 'architecture' }, {
+        replace: true,
+      });
   }, [path, generated, docs.data, setParams]);
   const source = useSource(repo.id, path);
   const gen = useQuery({
@@ -28,7 +31,10 @@ export function Documentation() {
 
   return (
     <div className="flex h-full flex-col md:flex-row" data-testid="documentation">
-      <nav aria-label="Documents" className="max-h-[32dvh] shrink-0 overflow-y-auto border-b border-line px-6 py-6 md:max-h-none md:w-[280px] md:border-b-0 md:border-r">
+      <nav
+        aria-label="Documents"
+        className="max-h-[32dvh] shrink-0 overflow-y-auto border-b border-line px-6 py-6 md:max-h-none md:w-[280px] md:border-b-0 md:border-r"
+      >
         <h2 className="font-editorial text-[1.25rem]">Documentation</h2>
         <h3 className="mb-1 mt-5 text-[0.8125rem] font-medium text-ink-2">Generated from the graph</h3>
         {(
@@ -37,7 +43,12 @@ export function Documentation() {
             ['markdown', 'Repository analysis'],
           ] as const
         ).map(([id, label]) => (
-          <button key={id} className={cx('link-row text-[0.875rem]', generated === id && 'font-medium')} aria-current={generated === id ? 'page' : undefined} onClick={() => setParams({ generated: id })}>
+          <button
+            key={id}
+            className={cx('link-row text-[0.875rem]', generated === id && 'font-medium')}
+            aria-current={generated === id ? 'page' : undefined}
+            onClick={() => setParams({ generated: id })}
+          >
             {label}
           </button>
         ))}
@@ -45,7 +56,12 @@ export function Documentation() {
         {docs.isLoading ? <p className="meta">Loading…</p> : null}
         {docs.data?.length === 0 ? <p className="label">No documentation files were found.</p> : null}
         {docs.data?.map((d) => (
-          <button key={d.path} className={cx('link-row', path === d.path && 'font-medium')} aria-current={path === d.path ? 'page' : undefined} onClick={() => setParams({ path: d.path })}>
+          <button
+            key={d.path}
+            className={cx('link-row', path === d.path && 'font-medium')}
+            aria-current={path === d.path ? 'page' : undefined}
+            onClick={() => setParams({ path: d.path })}
+          >
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[0.875rem]">{d.title}</span>
               <span className="meta block truncate">{d.path}</span>
@@ -57,15 +73,30 @@ export function Documentation() {
         {(generated ? gen.isLoading : source.isLoading) ? (
           <Loading label="Loading document" />
         ) : (generated ? gen.error : source.error) ? (
-          <Empty title="This document could not be opened">{((generated ? gen.error : source.error) as Error).message}</Empty>
+          <Empty title="This document could not be opened">
+            {((generated ? gen.error : source.error) as Error).message}
+          </Empty>
         ) : content === undefined ? null : isMarkdown ? (
           <article className="prose-doc">
-            {generated ? <p className="meta mb-6">Generated from the knowledge graph. Download it from Export in the header.</p> : <p className="meta mb-6">{path}</p>}
+            {generated ? (
+              <p className="meta mb-6">
+                Generated from the knowledge graph. Download it from Export in the header.
+              </p>
+            ) : (
+              <p className="meta mb-6">{path}</p>
+            )}
             {/* react-markdown renders to React elements and ignores raw HTML, so repository text cannot inject markup. */}
             <Markdown
               urlTransform={(url) => (/^(https?:|mailto:|#)/i.test(url) ? url : '')}
               components={{
-                a: ({ href, children }) => (href ? <a href={href} target="_blank" rel="noreferrer noopener">{children}</a> : <span>{children}</span>),
+                a: ({ href, children }) =>
+                  href ? (
+                    <a href={href} target="_blank" rel="noreferrer noopener">
+                      {children}
+                    </a>
+                  ) : (
+                    <span>{children}</span>
+                  ),
                 img: ({ alt }) => <span className="meta">[image: {alt || 'no description'}]</span>,
               }}
             >
@@ -75,10 +106,17 @@ export function Documentation() {
         ) : (
           <div className="max-w-[980px]">
             <p className="meta mb-3">{path}</p>
-            <CodePreview content={content} language={source.data?.language ?? null} path={path ?? ''} maxHeight="70vh" />
+            <CodePreview
+              content={content}
+              language={source.data?.language ?? null}
+              path={path ?? ''}
+              maxHeight="70vh"
+            />
           </div>
         )}
-        {!generated && source.data?.truncated ? <p className="meta mt-4">The file is larger than the preview limit and was shortened.</p> : null}
+        {!generated && source.data?.truncated ? (
+          <p className="meta mt-4">The file is larger than the preview limit and was shortened.</p>
+        ) : null}
       </div>
     </div>
   );
@@ -93,7 +131,8 @@ export function SourceView() {
   const { data, isLoading, error } = useSource(repo.id, path);
   if (!path) return <Empty title="No file selected">Open a source location from the inspector.</Empty>;
   if (isLoading) return <Loading label="Loading source" />;
-  if (error || !data) return <Empty title="The file could not be opened">{(error as Error | null)?.message}</Empty>;
+  if (error || !data)
+    return <Empty title="The file could not be opened">{(error as Error | null)?.message}</Empty>;
   const fileId = `file:${data.path}`;
   return (
     <div className="flex h-full flex-col" data-testid="source-view">
@@ -118,7 +157,14 @@ export function SourceView() {
         ) : null}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden p-4 md:p-6">
-        <CodePreview content={data.content} language={data.language} path={data.path} maxHeight="calc(100dvh - 190px)" highlight={{ start: line, end: line }} scrollToLine={line} />
+        <CodePreview
+          content={data.content}
+          language={data.language}
+          path={data.path}
+          maxHeight="calc(100dvh - 190px)"
+          highlight={{ start: line, end: line }}
+          scrollToLine={line}
+        />
       </div>
     </div>
   );

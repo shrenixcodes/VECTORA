@@ -8,7 +8,12 @@ import { type Palette, mix, paletteFor } from '@/lib/tokens';
 import { IconButton, Wordmark, cx } from './ui';
 
 /** Theme for pages outside a workspace. Works even when the local engine is not running. */
-export function useSiteTheme(): { theme: 'light' | 'dark'; palette: Palette; toggle: () => void; reducedMotion: boolean } {
+export function useSiteTheme(): {
+  theme: 'light' | 'dark';
+  palette: Palette;
+  toggle: () => void;
+  reducedMotion: boolean;
+} {
   const { settings, update } = useSettings();
   const [local, setLocal] = useState<'light' | 'dark' | 'system' | undefined>(undefined);
   const theme = useTheme(settings?.appearance.theme ?? local);
@@ -27,7 +32,11 @@ export function useSiteTheme(): { theme: 'light' | 'dark'; palette: Palette; tog
 
 export function SiteHeader() {
   const { theme, toggle } = useSiteTheme();
-  const link = ({ isActive }: { isActive: boolean }) => cx('text-[0.875rem] no-underline transition-colors duration-200', isActive ? 'text-ink' : 'text-ink-2 hover:text-ink');
+  const link = ({ isActive }: { isActive: boolean }) =>
+    cx(
+      'text-[0.875rem] no-underline transition-colors duration-200',
+      isActive ? 'text-ink' : 'text-ink-2 hover:text-ink',
+    );
   return (
     <header className="flex items-center justify-between gap-6 px-6 py-5 md:px-12">
       <a href="#main" className="skip-link">
@@ -46,7 +55,11 @@ export function SiteHeader() {
         <NavLink to="/settings" className={link}>
           Settings
         </NavLink>
-        <IconButton label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} onClick={toggle} className="btn-quiet">
+        <IconButton
+          label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
+          onClick={toggle}
+          className="btn-quiet"
+        >
           {theme === 'dark' ? <Sun size={15} strokeWidth={1.5} /> : <Moon size={15} strokeWidth={1.5} />}
         </IconButton>
       </nav>
@@ -119,7 +132,13 @@ export function AtlasIllustration({ className }: { className?: string }) {
         const u = Math.acos(2 * rnd() - 1);
         const d = 26 + rnd() * 42;
         links.push([hubs[h]!, points.length, false]);
-        points.push({ x: hub.x + Math.sin(u) * Math.cos(t) * d, y: hub.y + Math.cos(u) * d, z: hub.z + Math.sin(u) * Math.sin(t) * d, r: 1.4 + rnd() * 1.4, kind: 2 });
+        points.push({
+          x: hub.x + Math.sin(u) * Math.cos(t) * d,
+          y: hub.y + Math.cos(u) * d,
+          z: hub.z + Math.sin(u) * Math.sin(t) * d,
+          r: 1.4 + rnd() * 1.4,
+          kind: 2,
+        });
       }
     }
     for (let i = 0; i < 14; i++) {
@@ -199,5 +218,12 @@ export function AtlasIllustration({ className }: { className?: string }) {
       ro.disconnect();
     };
   }, [palette, reducedMotion]);
-  return <canvas ref={ref} className={className} role="img" aria-label="Illustration: a central repository node surrounded by six clusters of connected points, drawn in perspective." />;
+  return (
+    <canvas
+      ref={ref}
+      className={className}
+      role="img"
+      aria-label="Illustration: a central repository node surrounded by six clusters of connected points, drawn in perspective."
+    />
+  );
 }

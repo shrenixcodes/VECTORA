@@ -9,7 +9,12 @@ export const TMP = path.join(ROOT, '.bench-tmp', 'tests');
 
 let cached: Promise<IndexResult> | null = null;
 export function indexSample(): Promise<IndexResult> {
-  cached ??= indexRepository({ repositoryId: 'sample', repositoryName: 'Orbit Notes', rootDir: SAMPLE, inProcess: true });
+  cached ??= indexRepository({
+    repositoryId: 'sample',
+    repositoryName: 'Orbit Notes',
+    rootDir: SAMPLE,
+    inProcess: true,
+  });
   return cached;
 }
 

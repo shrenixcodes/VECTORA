@@ -33,7 +33,12 @@ export class CredentialVault {
     const iv = randomBytes(12);
     const cipher = createCipheriv('aes-256-gcm', this.key, iv);
     const data = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
-    return ['v1', iv.toString('base64'), cipher.getAuthTag().toString('base64'), data.toString('base64')].join(':');
+    return [
+      'v1',
+      iv.toString('base64'),
+      cipher.getAuthTag().toString('base64'),
+      data.toString('base64'),
+    ].join(':');
   }
 
   decrypt(stored: string): string {
@@ -102,19 +107,27 @@ export function unsafeEntryReason(name: string): string | null {
   if (parts.some((p) => p === '..')) return 'parent directory traversal';
   // eslint-disable-next-line no-control-regex
   if (parts.some((p) => /[<>:"|?*\u0000-\u001f]/.test(p))) return 'characters not allowed in file names';
-  if (parts.some((p) => /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(p))) return 'reserved device name';
+  if (parts.some((p) => /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(p)))
+    return 'reserved device name';
   if (parts.some((p) => p.length > 255) || n.length > 1024) return 'name too long';
   if (parts.some((p) => /[. ]$/.test(p) && p !== '.')) return 'trailing dot or space';
   return null;
 }
 
-const isSymlinkEntry = (entry: yauzl.Entry): boolean => ((entry.externalFileAttributes >>> 16) & 0o170000) === 0o120000;
+const isSymlinkEntry = (entry: yauzl.Entry): boolean =>
+  ((entry.externalFileAttributes >>> 16) & 0o170000) === 0o120000;
 
 function openZip(file: string): Promise<yauzl.ZipFile> {
   return new Promise((resolve, reject) => {
     // strictFileNames rejects backslashes; decodeStrings + validateEntrySizes are yauzl defaults.
     yauzl.open(file, { lazyEntries: true, autoClose: true, validateEntrySizes: true }, (err, zip) => {
-      if (err || !zip) reject(new ArchiveError(`Not a readable ZIP archive: ${err?.message ?? 'unknown error'}`, 'invalid-archive'));
+      if (err || !zip)
+        reject(
+          new ArchiveError(
+            `Not a readable ZIP archive: ${err?.message ?? 'unknown error'}`,
+            'invalid-archive',
+          ),
+        );
       else resolve(zip);
     });
   });
@@ -127,7 +140,9 @@ export function isZipFile(file: string): boolean {
     fs.readSync(fd, buf, 0, 4, 0);
     fs.closeSync(fd);
     // Local file header, or end-of-central-directory for an empty archive.
-    return buf[0] === 0x50 && buf[1] === 0x4b && ((buf[2] === 3 && buf[3] === 4) || (buf[2] === 5 && buf[3] === 6));
+    return (
+      buf[0] === 0x50 && buf[1] === 0x4b && ((buf[2] === 3 && buf[3] === 4) || (buf[2] === 5 && buf[3] === 6))
+    );
   } catch {
     return false;
   }
@@ -144,12 +159,27 @@ export interface ZipInspection {
 }
 
 const ROOT_MARKERS = new Set([
-  'package.json', 'pyproject.toml', 'setup.py', 'requirements.txt', 'go.mod', 'cargo.toml', 'pom.xml', 'build.gradle', 'build.gradle.kts',
-  'cmakelists.txt', 'makefile', '.gitignore', 'readme.md', 'tsconfig.json',
+  'package.json',
+  'pyproject.toml',
+  'setup.py',
+  'requirements.txt',
+  'go.mod',
+  'cargo.toml',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'cmakelists.txt',
+  'makefile',
+  '.gitignore',
+  'readme.md',
+  'tsconfig.json',
 ]);
 
 /** Lists an archive without extracting it and suggests project roots. */
-export async function inspectZip(file: string, limits: ZipLimits = DEFAULT_ZIP_LIMITS): Promise<ZipInspection> {
+export async function inspectZip(
+  file: string,
+  limits: ZipLimits = DEFAULT_ZIP_LIMITS,
+): Promise<ZipInspection> {
   if (!isZipFile(file)) throw new ArchiveError('The file is not a ZIP archive', 'invalid-archive');
   const zip = await openZip(file);
   const result: ZipInspection = { entries: 0, files: 0, totalBytes: 0, rejected: [], roots: [], tree: [] };
@@ -157,13 +187,17 @@ export async function inspectZip(file: string, limits: ZipLimits = DEFAULT_ZIP_L
   const dirMarkers = new Map<string, Set<string>>();
   const top = new Map<string, ZipEntryInfo>();
   await new Promise<void>((resolve, reject) => {
-    zip.on('error', (e) => reject(new ArchiveError(`Archive is damaged: ${(e as Error).message}`, 'invalid-archive')));
+    zip.on('error', (e) =>
+      reject(new ArchiveError(`Archive is damaged: ${(e as Error).message}`, 'invalid-archive')),
+    );
     zip.on('end', resolve);
     zip.on('entry', (entry: yauzl.Entry) => {
       result.entries++;
       if (result.entries > limits.maxEntries) {
         zip.close();
-        return reject(new ArchiveError(`Archive has more than ${limits.maxEntries} entries`, 'too-many-entries'));
+        return reject(
+          new ArchiveError(`Archive has more than ${limits.maxEntries} entries`, 'too-many-entries'),
+        );
       }
       const name = entry.fileName.replace(/\\/g, '/');
       const directory = name.endsWith('/');
@@ -175,7 +209,9 @@ export async function inspectZip(file: string, limits: ZipLimits = DEFAULT_ZIP_L
         result.totalBytes += entry.uncompressedSize;
         if (result.totalBytes > limits.maxTotalBytes) {
           zip.close();
-          return reject(new ArchiveError('Archive is larger than the allowed uncompressed size', 'too-large'));
+          return reject(
+            new ArchiveError('Archive is larger than the allowed uncompressed size', 'too-large'),
+          );
         }
         const parts = name.split('/');
         const base = parts[parts.length - 1]!.toLowerCase();
@@ -184,11 +220,18 @@ export async function inspectZip(file: string, limits: ZipLimits = DEFAULT_ZIP_L
           dirFiles.set(dir, (dirFiles.get(dir) ?? 0) + 1);
         }
         const dir = parts.slice(0, -1).join('/');
-        if (ROOT_MARKERS.has(base) && parts.length <= 4) (dirMarkers.get(dir) ?? dirMarkers.set(dir, new Set()).get(dir)!).add(parts[parts.length - 1]!);
+        if (ROOT_MARKERS.has(base) && parts.length <= 4)
+          (dirMarkers.get(dir) ?? dirMarkers.set(dir, new Set()).get(dir)!).add(parts[parts.length - 1]!);
         // Two-level preview of the structure.
         const key = parts.slice(0, 2).join('/');
-        if (top.size < 300 && !top.has(key)) top.set(key, { path: key, size: parts.length <= 2 ? entry.uncompressedSize : 0, directory: parts.length > 2 });
-        if (parts.length > 1 && !top.has(parts[0]!)) top.set(parts[0]!, { path: parts[0]!, size: 0, directory: true });
+        if (top.size < 300 && !top.has(key))
+          top.set(key, {
+            path: key,
+            size: parts.length <= 2 ? entry.uncompressedSize : 0,
+            directory: parts.length > 2,
+          });
+        if (parts.length > 1 && !top.has(parts[0]!))
+          top.set(parts[0]!, { path: parts[0]!, size: 0, directory: true });
       }
       zip.readEntry();
     });
@@ -203,7 +246,13 @@ export async function inspectZip(file: string, limits: ZipLimits = DEFAULT_ZIP_L
   result.roots = [...candidates]
     .map((p) => ({ path: p, files: dirFiles.get(p) ?? 0, markers: [...(dirMarkers.get(p) ?? [])].sort() }))
     .filter((r) => r.files > 0)
-    .sort((a, b) => (a.path === nested ? -1 : b.path === nested ? 1 : b.markers.length - a.markers.length || a.path.length - b.path.length))
+    .sort((a, b) =>
+      a.path === nested
+        ? -1
+        : b.path === nested
+          ? 1
+          : b.markers.length - a.markers.length || a.path.length - b.path.length,
+    )
     .slice(0, 12);
   result.tree = [...top.values()].sort((a, b) => (a.path < b.path ? -1 : 1));
   return result;
@@ -227,7 +276,11 @@ export interface ExtractResult {
  * destination, symbolic links, ignored paths, binary files and oversized
  * files are skipped and counted — they are never written to disk.
  */
-export async function extractZip(file: string, destDir: string, opts: ExtractOptions = {}): Promise<ExtractResult> {
+export async function extractZip(
+  file: string,
+  destDir: string,
+  opts: ExtractOptions = {},
+): Promise<ExtractResult> {
   if (!isZipFile(file)) throw new ArchiveError('The file is not a ZIP archive', 'invalid-archive');
   const limits = { ...DEFAULT_ZIP_LIMITS, ...opts.limits };
   const root = (opts.root ?? '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
@@ -235,35 +288,51 @@ export async function extractZip(file: string, destDir: string, opts: ExtractOpt
   const dest = path.resolve(destDir);
   fs.mkdirSync(dest, { recursive: true });
   const zip = await openZip(file);
-  const result: ExtractResult = { files: 0, bytes: 0, skipped: { unsafe: 0, symlinks: 0, ignored: 0, binary: 0, oversized: 0 } };
+  const result: ExtractResult = {
+    files: 0,
+    bytes: 0,
+    skipped: { unsafe: 0, symlinks: 0, ignored: 0, binary: 0, oversized: 0 },
+  };
   let entries = 0;
   await new Promise<void>((resolve, reject) => {
     const fail = (e: Error) => {
       zip.close();
       reject(e);
     };
-    zip.on('error', (e) => reject(new ArchiveError(`Archive is damaged: ${(e as Error).message}`, 'invalid-archive')));
+    zip.on('error', (e) =>
+      reject(new ArchiveError(`Archive is damaged: ${(e as Error).message}`, 'invalid-archive')),
+    );
     zip.on('end', resolve);
     zip.on('entry', (entry: yauzl.Entry) => {
-      if (++entries > limits.maxEntries) return fail(new ArchiveError(`Archive has more than ${limits.maxEntries} entries`, 'too-many-entries'));
+      if (++entries > limits.maxEntries)
+        return fail(
+          new ArchiveError(`Archive has more than ${limits.maxEntries} entries`, 'too-many-entries'),
+        );
       const name = entry.fileName.replace(/\\/g, '/');
       const next = () => zip.readEntry();
       if (name.endsWith('/')) return next();
-      if (unsafeEntryReason(name)) return result.skipped.unsafe++, next();
-      if (isSymlinkEntry(entry)) return result.skipped.symlinks++, next();
+      if (unsafeEntryReason(name)) return (result.skipped.unsafe++, next());
+      if (isSymlinkEntry(entry)) return (result.skipped.symlinks++, next());
       if (root && !name.startsWith(`${root}/`)) return next();
       const rel = root ? name.slice(root.length + 1) : name;
       if (!rel) return next();
-      if (ig.ignores(rel)) return result.skipped.ignored++, next();
-      if (isBinaryPath(rel)) return result.skipped.binary++, next();
+      if (ig.ignores(rel)) return (result.skipped.ignored++, next());
+      if (isBinaryPath(rel)) return (result.skipped.binary++, next());
       const tooBig = entry.uncompressedSize > limits.maxFileBytes;
-      const bomb = entry.compressedSize > 0 && entry.uncompressedSize / entry.compressedSize > limits.maxRatio && entry.uncompressedSize > 1024 * 1024;
-      if (tooBig || bomb) return result.skipped.oversized++, next();
-      if (result.bytes + entry.uncompressedSize > limits.maxTotalBytes) return fail(new ArchiveError('Archive is larger than the allowed uncompressed size', 'too-large'));
+      const bomb =
+        entry.compressedSize > 0 &&
+        entry.uncompressedSize / entry.compressedSize > limits.maxRatio &&
+        entry.uncompressedSize > 1024 * 1024;
+      if (tooBig || bomb) return (result.skipped.oversized++, next());
+      if (result.bytes + entry.uncompressedSize > limits.maxTotalBytes)
+        return fail(new ArchiveError('Archive is larger than the allowed uncompressed size', 'too-large'));
       const target = resolveInside(dest, rel);
-      if (!target) return result.skipped.unsafe++, next();
+      if (!target) return (result.skipped.unsafe++, next());
       zip.openReadStream(entry, (err, stream) => {
-        if (err || !stream) return fail(new ArchiveError(`Archive entry could not be read: ${err?.message ?? ''}`, 'invalid-archive'));
+        if (err || !stream)
+          return fail(
+            new ArchiveError(`Archive entry could not be read: ${err?.message ?? ''}`, 'invalid-archive'),
+          );
         fs.mkdirSync(path.dirname(target), { recursive: true });
         // `wx`: never overwrite; an entry listed twice cannot replace an earlier one.
         pipeline(stream, fs.createWriteStream(target, { flags: 'wx', mode: 0o644 }))
@@ -272,11 +341,16 @@ export async function extractZip(file: string, destDir: string, opts: ExtractOpt
             result.bytes += entry.uncompressedSize;
             next();
           })
-          .catch((e: NodeJS.ErrnoException) => (e.code === 'EEXIST' ? next() : fail(new ArchiveError(`Extraction failed: ${e.message}`, 'invalid-archive'))));
+          .catch((e: NodeJS.ErrnoException) =>
+            e.code === 'EEXIST'
+              ? next()
+              : fail(new ArchiveError(`Extraction failed: ${e.message}`, 'invalid-archive')),
+          );
       });
     });
     zip.readEntry();
   });
-  if (result.files === 0) throw new ArchiveError('No source files could be extracted from the archive', 'empty');
+  if (result.files === 0)
+    throw new ArchiveError('No source files could be extracted from the archive', 'empty');
   return result;
 }

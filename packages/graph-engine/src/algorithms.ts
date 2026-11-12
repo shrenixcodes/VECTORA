@@ -28,7 +28,18 @@ export function buildIndex(graph: Pick<KnowledgeGraph, 'nodes' | 'edges'>): Grap
 }
 
 /** Relationship types that express "A needs B to work". */
-export const DEPENDENCY_EDGES: readonly EdgeType[] = ['IMPORTS', 'CALLS', 'USES', 'EXTENDS', 'IMPLEMENTS', 'INSTANTIATES', 'READS_FROM', 'WRITES_TO', 'ROUTES_TO', 'DEPENDS_ON'];
+export const DEPENDENCY_EDGES: readonly EdgeType[] = [
+  'IMPORTS',
+  'CALLS',
+  'USES',
+  'EXTENDS',
+  'IMPLEMENTS',
+  'INSTANTIATES',
+  'READS_FROM',
+  'WRITES_TO',
+  'ROUTES_TO',
+  'DEPENDS_ON',
+];
 const HIERARCHY_EDGES: readonly EdgeType[] = ['CONTAINS', 'DEFINED_IN', 'BELONGS_TO', 'EXPORTS'];
 
 export interface TraversalResult {
@@ -73,7 +84,13 @@ export function traverse(
 }
 
 /** Shortest directed path between two nodes over dependency edges. */
-export function shortestPath(index: GraphIndex, from: string, to: string, types: readonly EdgeType[] = DEPENDENCY_EDGES, maxDepth = 12): GraphEdge[] | null {
+export function shortestPath(
+  index: GraphIndex,
+  from: string,
+  to: string,
+  types: readonly EdgeType[] = DEPENDENCY_EDGES,
+  maxDepth = 12,
+): GraphEdge[] | null {
   if (from === to) return [];
   const allowed = new Set(types);
   const prev = new Map<string, GraphEdge>();
@@ -88,7 +105,7 @@ export function shortestPath(index: GraphIndex, from: string, to: string, types:
         prev.set(e.target, e);
         if (e.target === to) {
           const path: GraphEdge[] = [];
-          for (let cur = to; cur !== from; ) {
+          for (let cur = to; cur !== from;) {
             const pe = prev.get(cur)!;
             path.unshift(pe);
             cur = pe.source;
@@ -107,7 +124,11 @@ export function shortestPath(index: GraphIndex, from: string, to: string, types:
  * Strongly connected components (Tarjan, iterative) over the given edge
  * types. Components with more than one node are dependency cycles.
  */
-export function findCycles(index: GraphIndex, types: readonly EdgeType[] = ['IMPORTS'], nodeFilter?: (n: GraphNode) => boolean): string[][] {
+export function findCycles(
+  index: GraphIndex,
+  types: readonly EdgeType[] = ['IMPORTS'],
+  nodeFilter?: (n: GraphNode) => boolean,
+): string[][] {
   const allowed = new Set(types);
   const ids = [...index.nodes.values()].filter((n) => !nodeFilter || nodeFilter(n)).map((n) => n.id);
   const idx = new Map<string, number>();
@@ -164,7 +185,11 @@ export function findCycles(index: GraphIndex, types: readonly EdgeType[] = ['IMP
 }
 
 /** One concrete cycle path inside a strongly connected component. */
-export function cyclePath(index: GraphIndex, component: string[], types: readonly EdgeType[] = ['IMPORTS']): GraphEdge[] {
+export function cyclePath(
+  index: GraphIndex,
+  component: string[],
+  types: readonly EdgeType[] = ['IMPORTS'],
+): GraphEdge[] {
   const set = new Set(component);
   const start = component[0]!;
   const allowed = new Set(types);
@@ -178,7 +203,7 @@ export function cyclePath(index: GraphIndex, component: string[], types: readonl
         if (!allowed.has(e.type) || !set.has(e.target)) continue;
         if (e.target === start) {
           const path = [e];
-          for (let cur = id; cur !== start; ) {
+          for (let cur = id; cur !== start;) {
             const pe = prev.get(cur)!;
             path.unshift(pe);
             cur = pe.source;
@@ -205,7 +230,8 @@ export function impactOf(index: GraphIndex, id: string, maxDepth = 5, maxNodes =
   const edgeSeen = new Set<string>();
   for (const s of seeds) {
     const r = traverse(index, s, 'in', { maxDepth, maxNodes });
-    for (const [k, v] of r.distances) if (!merged.distances.has(k) || merged.distances.get(k)! > v) merged.distances.set(k, v);
+    for (const [k, v] of r.distances)
+      if (!merged.distances.has(k) || merged.distances.get(k)! > v) merged.distances.set(k, v);
     for (const e of r.edges) {
       if (edgeSeen.has(e.id)) continue;
       edgeSeen.add(e.id);
@@ -223,7 +249,9 @@ export function containerChain(index: GraphIndex, id: string): GraphNode[] {
   const seen = new Set<string>();
   while (cur && !seen.has(cur)) {
     seen.add(cur);
-    const parent: GraphEdge | undefined = (index.in.get(cur) ?? []).find((e) => e.type === 'CONTAINS' && e.extractionMethod === 'filesystem');
+    const parent: GraphEdge | undefined = (index.in.get(cur) ?? []).find(
+      (e) => e.type === 'CONTAINS' && e.extractionMethod === 'filesystem',
+    );
     if (!parent) break;
     const n = index.nodes.get(parent.source);
     if (n) chain.unshift(n);
@@ -245,7 +273,8 @@ export function assignCommunities(nodes: GraphNode[], edges: GraphEdge[]): numbe
     if (!g.hasNode(e.source) || !g.hasNode(e.target)) continue;
     // Containment keeps symbols near their file; dependencies pull related files together.
     const w = e.type === 'CONTAINS' ? 1.5 : 1;
-    if (g.hasEdge(e.source, e.target)) g.updateEdgeAttribute(e.source, e.target, 'weight', (x: number | undefined) => (x ?? 0) + w);
+    if (g.hasEdge(e.source, e.target))
+      g.updateEdgeAttribute(e.source, e.target, 'weight', (x: number | undefined) => (x ?? 0) + w);
     else g.addEdge(e.source, e.target, { weight: w });
   }
   if (g.size === 0) {

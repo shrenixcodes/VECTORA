@@ -14,7 +14,9 @@ process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
 try {
   await app.listen({ host: config.host, port: config.port });
-  app.log.info(`VECTORA engine ready at http://${config.host}:${config.port} (data: ${config.dataDir}${config.webDist ? ', serving web application' : ''})`);
+  app.log.info(
+    `VECTORA engine ready at http://${config.host}:${config.port} (data: ${config.dataDir}${config.webDist ? ', serving web application' : ''})`,
+  );
 } catch (err) {
   app.log.error(err);
   process.exit(1);

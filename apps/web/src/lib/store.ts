@@ -72,9 +72,18 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       if (opts?.additive) {
         const has = s.selectedIds.includes(id);
         const selectedIds = has ? s.selectedIds.filter((x) => x !== id) : [...s.selectedIds, id];
-        return { selectedIds, primaryId: has ? (selectedIds[selectedIds.length - 1] ?? null) : id, inspectorOpen: true };
+        return {
+          selectedIds,
+          primaryId: has ? (selectedIds[selectedIds.length - 1] ?? null) : id,
+          inspectorOpen: true,
+        };
       }
-      return { selectedIds: [id], primaryId: id, inspectorOpen: true, revealTick: opts?.reveal ? s.revealTick + 1 : s.revealTick };
+      return {
+        selectedIds: [id],
+        primaryId: id,
+        inspectorOpen: true,
+        revealTick: opts?.reveal ? s.revealTick + 1 : s.revealTick,
+      };
     }),
   clearSelection: () => set({ selectedIds: [], primaryId: null }),
   setHover: (hoverId) => set((s) => (s.hoverId === hoverId ? s : { hoverId })),
@@ -89,7 +98,8 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   setHiddenNodeTypes: (hiddenNodeTypes) => set({ hiddenNodeTypes }),
   setHiddenEdgeTypes: (hiddenEdgeTypes) => set({ hiddenEdgeTypes }),
   setHighlight: (highlight) => set({ highlight }),
-  setInspector: (inspectorOpen, width) => set((s) => ({ inspectorOpen, inspectorWidth: width ?? s.inspectorWidth })),
+  setInspector: (inspectorOpen, width) =>
+    set((s) => ({ inspectorOpen, inspectorWidth: width ?? s.inspectorWidth })),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setLayout: (key, value) => set((s) => ({ layouts: { ...s.layouts, [key]: value } })),
   hydrate: (repoId, session, defaults) =>

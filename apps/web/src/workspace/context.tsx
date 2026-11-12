@@ -19,7 +19,11 @@ export interface WorkspaceContextValue {
   expandFile: (fileId: string, force?: boolean) => void;
   /** Selects a node and makes sure it is visible in the current view. */
   reveal: (nodeId: string) => void;
-  openView: (view: 'graph' | 'atlas' | 'mindmap' | 'overview' | 'dependencies' | 'search' | 'docs' | 'settings' | 'source', query?: string) => void;
+  openView: (
+    view:
+      'graph' | 'atlas' | 'mindmap' | 'overview' | 'dependencies' | 'search' | 'docs' | 'settings' | 'source',
+    query?: string,
+  ) => void;
 }
 
 export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);

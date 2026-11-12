@@ -5,7 +5,15 @@ import { useNavigate } from 'react-router';
 import { formatBytes } from '@vectora/shared';
 import { SitePage } from '@/components/Site';
 import { Dialog, Notice, cx } from '@/components/ui';
-import { ApiError, type GitHubInfo, type ZipInspection, api, useHealth, useJob, useRepositories } from '@/lib/api';
+import {
+  ApiError,
+  type GitHubInfo,
+  type ZipInspection,
+  api,
+  useHealth,
+  useJob,
+  useRepositories,
+} from '@/lib/api';
 import { IndexingProgress } from '@/workspace/WorkspaceLayout';
 
 type Method = 'github' | 'zip' | 'local';
@@ -44,7 +52,12 @@ export function ImportPage() {
     return (
       <SitePage>
         <div className="mx-auto max-w-[1180px] px-6 py-16 md:px-12">
-          <IndexingProgress stageIndex={job?.stageIndex ?? 0} message={job?.message ?? 'Starting'} processed={job?.processed ?? 0} total={job?.total ?? 0} />
+          <IndexingProgress
+            stageIndex={job?.stageIndex ?? 0}
+            message={job?.message ?? 'Starting'}
+            processed={job?.processed ?? 0}
+            total={job?.total ?? 0}
+          />
         </div>
       </SitePage>
     );
@@ -56,16 +69,28 @@ export function ImportPage() {
           <h1 id="import-title" className="font-editorial text-(length:--text-page)">
             Explore a repository
           </h1>
-          <p className="label mt-2 max-w-[56ch] text-[0.9375rem]">The source is analysed on this machine. Nothing in the repository is installed or run.</p>
+          <p className="label mt-2 max-w-[56ch] text-[0.9375rem]">
+            The source is analysed on this machine. Nothing in the repository is installed or run.
+          </p>
 
           {offline ? (
             <div className="mt-6">
-              <Notice tone="error">The local engine is not running, so repositories cannot be imported. Start it with <code>npm start</code> in the VECTORA folder and reload this page.</Notice>
+              <Notice tone="error">
+                The local engine is not running, so repositories cannot be imported. Start it with{' '}
+                <code>npm start</code> in the VECTORA folder and reload this page.
+              </Notice>
             </div>
           ) : null}
           {error ? (
             <div className="mt-6">
-              <Notice tone="error" action={<button className="btn btn-sm" onClick={() => setError(null)}>Dismiss</button>}>
+              <Notice
+                tone="error"
+                action={
+                  <button className="btn btn-sm" onClick={() => setError(null)}>
+                    Dismiss
+                  </button>
+                }
+              >
                 {error}
               </Notice>
             </div>
@@ -85,7 +110,12 @@ export function ImportPage() {
                 id={`tab-${id}`}
                 aria-selected={method === id}
                 aria-controls={`panel-${id}`}
-                className={cx('-mb-px cursor-pointer border-0 border-b-2 bg-transparent px-0 pb-2.5 text-[0.9375rem]', method === id ? 'border-ink font-medium text-ink' : 'border-transparent text-ink-2 hover:text-ink')}
+                className={cx(
+                  '-mb-px cursor-pointer border-0 border-b-2 bg-transparent px-0 pb-2.5 text-[0.9375rem]',
+                  method === id
+                    ? 'border-ink font-medium text-ink'
+                    : 'border-transparent text-ink-2 hover:text-ink',
+                )}
                 onClick={() => setMethod(id)}
               >
                 {label}
@@ -93,7 +123,13 @@ export function ImportPage() {
             ))}
           </div>
           <div role="tabpanel" id={`panel-${method}`} aria-labelledby={`tab-${method}`} className="pt-6">
-            {method === 'github' ? <GitHubForm onStart={start} /> : method === 'zip' ? <ZipForm onStart={start} /> : <LocalForm onStart={start} />}
+            {method === 'github' ? (
+              <GitHubForm onStart={start} />
+            ) : method === 'zip' ? (
+              <ZipForm onStart={start} />
+            ) : (
+              <LocalForm onStart={start} />
+            )}
           </div>
         </section>
 
@@ -102,22 +138,38 @@ export function ImportPage() {
             Your repositories
           </h2>
           {repos.isLoading ? <p className="meta mt-3">Loading…</p> : null}
-          {repos.data?.length === 0 ? <p className="label mt-3">Nothing imported yet. Repositories you index appear here and reopen with their saved workspace.</p> : null}
+          {repos.data?.length === 0 ? (
+            <p className="label mt-3">
+              Nothing imported yet. Repositories you index appear here and reopen with their saved workspace.
+            </p>
+          ) : null}
           <ul className="m-0 list-none p-0">
             {repos.data?.map((r) => (
               <li key={r.id} className="flex items-baseline gap-3 border-b border-line py-3">
-                <button className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-ink hover:text-indigo" onClick={() => navigate(`/w/${r.id}`)} data-testid="repo-link">
+                <button
+                  className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-ink hover:text-indigo"
+                  onClick={() => navigate(`/w/${r.id}`)}
+                  data-testid="repo-link"
+                >
                   <span className="block truncate font-medium">{r.name}</span>
                   <span className="meta block truncate">
                     {r.sourceKind}
-                    {r.branch ? `, ${r.branch}` : ''} — {r.status === 'ready' ? `${r.symbolCount.toLocaleString()} symbols, ${r.relationshipCount.toLocaleString()} relationships` : r.status}
+                    {r.branch ? `, ${r.branch}` : ''} —{' '}
+                    {r.status === 'ready'
+                      ? `${r.symbolCount.toLocaleString()} symbols, ${r.relationshipCount.toLocaleString()} relationships`
+                      : r.status}
                   </span>
                 </button>
                 <button
                   className="btn btn-sm btn-quiet shrink-0"
                   aria-label={`Remove ${r.name}`}
                   onClick={async () => {
-                    if (!window.confirm(`Remove “${r.name}” from VECTORA? Its graph and saved workspace are deleted.${r.sourceKind === 'local' || r.sourceKind === 'sample' ? ' The folder itself is not touched.' : ''}`)) return;
+                    if (
+                      !window.confirm(
+                        `Remove “${r.name}” from VECTORA? Its graph and saved workspace are deleted.${r.sourceKind === 'local' || r.sourceKind === 'sample' ? ' The folder itself is not touched.' : ''}`,
+                      )
+                    )
+                      return;
                     await api.deleteRepository(r.id);
                     void qc.invalidateQueries({ queryKey: ['repositories'] });
                   }}
@@ -130,8 +182,15 @@ export function ImportPage() {
           {health.data?.sampleAvailable ? (
             <div className="mt-8 border-l-2 border-clay pl-4">
               <p className="text-[0.9375rem]">New here? Try the bundled sample.</p>
-              <p className="label mt-1">“Orbit Notes” is a small, clearly labelled multi-language repository included for onboarding and tests. It is not a real product.</p>
-              <button className="btn btn-sm mt-3" onClick={() => void start(api.importSample)} data-testid="import-sample">
+              <p className="label mt-1">
+                “Orbit Notes” is a small, clearly labelled multi-language repository included for onboarding
+                and tests. It is not a real product.
+              </p>
+              <button
+                className="btn btn-sm mt-3"
+                onClick={() => void start(api.importSample)}
+                data-testid="import-sample"
+              >
                 Index the sample repository
               </button>
             </div>
@@ -160,7 +219,9 @@ function GitHubForm({ onStart }: { onStart: Start }) {
     try {
       const i = await api.validateGitHub(url, token);
       setInfo(i);
-      setBranch(i.requested.branch && i.branches.includes(i.requested.branch) ? i.requested.branch : i.defaultBranch);
+      setBranch(
+        i.requested.branch && i.branches.includes(i.requested.branch) ? i.requested.branch : i.defaultBranch,
+      );
       setSubdir(i.requested.subdirectory ?? '');
     } catch (e) {
       setError((e as Error).message);
@@ -172,7 +233,16 @@ function GitHubForm({ onStart }: { onStart: Start }) {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (info) void onStart(() => api.importGitHub({ url, branch, subdirectory: subdir || undefined, token: token || undefined, rememberToken: remember }));
+        if (info)
+          void onStart(() =>
+            api.importGitHub({
+              url,
+              branch,
+              subdirectory: subdir || undefined,
+              token: token || undefined,
+              rememberToken: remember,
+            }),
+          );
         else void validate();
       }}
       className="grid gap-5"
@@ -201,10 +271,27 @@ function GitHubForm({ onStart }: { onStart: Start }) {
           <label htmlFor="gh-token" className="block">
             Access token
           </label>
-          <input id="gh-token" type="password" className="field font-mono text-[0.8125rem]" autoComplete="off" spellCheck={false} placeholder="Leave empty to use a stored token" value={token} onChange={(e) => setToken(e.target.value)} />
-          <p className="label max-w-[60ch]">A fine-grained token with read-only access to repository contents is enough. It is sent to api.github.com in a request header and never placed in a URL or a log.</p>
+          <input
+            id="gh-token"
+            type="password"
+            className="field font-mono text-[0.8125rem]"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Leave empty to use a stored token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
+          <p className="label max-w-[60ch]">
+            A fine-grained token with read-only access to repository contents is enough. It is sent to
+            api.github.com in a request header and never placed in a URL or a log.
+          </p>
           <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" className="accent-(--indigo)" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="accent-(--indigo)"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            />
             Store this token encrypted on this machine
           </label>
         </div>
@@ -236,7 +323,12 @@ function GitHubForm({ onStart }: { onStart: Start }) {
             </label>
             <label className="block text-[0.875rem]">
               Subdirectory (optional)
-              <input className="field mt-1 font-mono text-[0.8125rem]" placeholder="packages/core" value={subdir} onChange={(e) => setSubdir(e.target.value)} />
+              <input
+                className="field mt-1 font-mono text-[0.8125rem]"
+                placeholder="packages/core"
+                value={subdir}
+                onChange={(e) => setSubdir(e.target.value)}
+              />
             </label>
           </div>
         </div>
@@ -286,11 +378,21 @@ function ZipForm({ onStart }: { onStart: Start }) {
           setOver(false);
           void upload(e.dataTransfer.files[0]);
         }}
-        className={cx('border border-dashed px-6 py-10 text-center transition-colors duration-200', over ? 'border-indigo bg-surface' : 'border-ash')}
+        className={cx(
+          'border border-dashed px-6 py-10 text-center transition-colors duration-200',
+          over ? 'border-indigo bg-surface' : 'border-ash',
+        )}
       >
         <p className="text-[0.9375rem]">Drop a ZIP archive here</p>
         <p className="label mt-1">up to 512 MB. The archive is checked before anything is extracted.</p>
-        <input ref={input} type="file" accept=".zip,application/zip" className="sr-only" id="zip-file" onChange={(e) => void upload(e.target.files?.[0])} />
+        <input
+          ref={input}
+          type="file"
+          accept=".zip,application/zip"
+          className="sr-only"
+          id="zip-file"
+          onChange={(e) => void upload(e.target.files?.[0])}
+        />
         <label htmlFor="zip-file" className="btn mt-4 cursor-pointer">
           {busy ? 'Checking archive' : 'Choose a file'}
         </label>
@@ -306,14 +408,24 @@ function ZipForm({ onStart }: { onStart: Start }) {
           </div>
           {inspection.rejected.length ? (
             <Notice tone="warning">
-              {inspection.rejected.length} entr{inspection.rejected.length === 1 ? 'y' : 'ies'} will be skipped as unsafe ({[...new Set(inspection.rejected.map((r) => r.reason))].join(', ')}).
+              {inspection.rejected.length} entr{inspection.rejected.length === 1 ? 'y' : 'ies'} will be
+              skipped as unsafe ({[...new Set(inspection.rejected.map((r) => r.reason))].join(', ')}).
             </Notice>
           ) : null}
           <fieldset className="m-0 border-0 p-0">
             <legend className="text-[0.875rem] font-medium">Project root</legend>
             {inspection.roots.map((r) => (
-              <label key={r.path || '/'} className="flex cursor-pointer items-baseline gap-2 border-b border-line py-2 text-[0.875rem]">
-                <input type="radio" name="zip-root" className="accent-(--indigo)" checked={root === r.path} onChange={() => setRoot(r.path)} />
+              <label
+                key={r.path || '/'}
+                className="flex cursor-pointer items-baseline gap-2 border-b border-line py-2 text-[0.875rem]"
+              >
+                <input
+                  type="radio"
+                  name="zip-root"
+                  className="accent-(--indigo)"
+                  checked={root === r.path}
+                  onChange={() => setRoot(r.path)}
+                />
                 <span className="font-mono text-[0.8125rem]">{r.path || '(archive root)'}</span>
                 <span className="meta ml-auto">
                   {r.files.toLocaleString()} files{r.markers.length ? ` — ${r.markers.join(', ')}` : ''}
@@ -333,13 +445,19 @@ function ZipForm({ onStart }: { onStart: Start }) {
             </ul>
           </details>
           <div>
-            <button className="btn btn-primary" onClick={() => void onStart(() => api.importZip(inspection.uploadId, root))}>
+            <button
+              className="btn btn-primary"
+              onClick={() => void onStart(() => api.importZip(inspection.uploadId, root))}
+            >
               Extract and index
             </button>
           </div>
         </div>
       ) : null}
-      <p className="label max-w-[60ch]">Ignored folders such as node_modules, binary files, symbolic links and entries that point outside the archive are never extracted.</p>
+      <p className="label max-w-[60ch]">
+        Ignored folders such as node_modules, binary files, symbolic links and entries that point outside the
+        archive are never extracted.
+      </p>
     </div>
   );
 }
@@ -360,12 +478,23 @@ function LocalForm({ onStart }: { onStart: Start }) {
           Folder on this machine
         </label>
         <div className="mt-1 flex gap-2">
-          <input id="local-path" className="field font-mono text-[0.8125rem]" placeholder="D:\projects\my-repository" value={path} onChange={(e) => setPath(e.target.value)} autoComplete="off" spellCheck={false} />
+          <input
+            id="local-path"
+            className="field font-mono text-[0.8125rem]"
+            placeholder="D:\projects\my-repository"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+          />
           <button type="button" className="btn shrink-0" onClick={() => setBrowse(true)}>
             Browse
           </button>
         </div>
-        <p className="label mt-2 max-w-[60ch]">The folder is read in place by the local engine. .gitignore files and the ignore patterns from Settings are respected; nothing is copied or changed.</p>
+        <p className="label mt-2 max-w-[60ch]">
+          The folder is read in place by the local engine. .gitignore files and the ignore patterns from
+          Settings are respected; nothing is copied or changed.
+        </p>
       </div>
       <div>
         <button className="btn btn-primary" disabled={!path.trim()}>
@@ -377,11 +506,31 @@ function LocalForm({ onStart }: { onStart: Start }) {
   );
 }
 
-function FolderBrowser({ open, onOpenChange, initial, onPick }: { open: boolean; onOpenChange: (o: boolean) => void; initial: string; onPick: (p: string) => void }) {
+function FolderBrowser({
+  open,
+  onOpenChange,
+  initial,
+  onPick,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  initial: string;
+  onPick: (p: string) => void;
+}) {
   const [dir, setDir] = useState<string | undefined>(initial || undefined);
-  const list = useQuery({ queryKey: ['fs', dir], queryFn: () => api.listDir(dir), enabled: open, retry: false });
+  const list = useQuery({
+    queryKey: ['fs', dir],
+    queryFn: () => api.listDir(dir),
+    enabled: open,
+    retry: false,
+  });
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title="Choose a folder" description="Folders on this machine, listed by the local engine.">
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Choose a folder"
+      description="Folders on this machine, listed by the local engine."
+    >
       <div className="flex flex-wrap items-center gap-2">
         {list.data?.roots.map((r) => (
           <button key={r} type="button" className="btn btn-sm" onClick={() => setDir(r)}>
@@ -397,7 +546,14 @@ function FolderBrowser({ open, onOpenChange, initial, onPick }: { open: boolean;
       <p className="mt-3 break-all font-mono text-[0.8125rem]">{list.data?.path ?? dir ?? ''}</p>
       {list.error ? (
         <div className="mt-3">
-          <Notice tone="error" action={<button type="button" className="btn btn-sm" onClick={() => setDir(undefined)}>Start over</button>}>
+          <Notice
+            tone="error"
+            action={
+              <button type="button" className="btn btn-sm" onClick={() => setDir(undefined)}>
+                Start over
+              </button>
+            }
+          >
             {(list.error as Error).message}
           </Notice>
         </div>
@@ -406,8 +562,17 @@ function FolderBrowser({ open, onOpenChange, initial, onPick }: { open: boolean;
         {list.data?.entries.length === 0 ? <li className="label py-3">No folders here.</li> : null}
         {list.data?.entries.map((e) => (
           <li key={e.path}>
-            <button type="button" className="link-row items-center" onDoubleClick={() => setDir(e.path)} onClick={() => setDir(e.path)}>
-              {e.repository ? <FolderGit2 size={15} strokeWidth={1.5} className="shrink-0 text-indigo" aria-hidden="true" /> : <Folder size={15} strokeWidth={1.5} className="shrink-0 text-ink-3" aria-hidden="true" />}
+            <button
+              type="button"
+              className="link-row items-center"
+              onDoubleClick={() => setDir(e.path)}
+              onClick={() => setDir(e.path)}
+            >
+              {e.repository ? (
+                <FolderGit2 size={15} strokeWidth={1.5} className="shrink-0 text-indigo" aria-hidden="true" />
+              ) : (
+                <Folder size={15} strokeWidth={1.5} className="shrink-0 text-ink-3" aria-hidden="true" />
+              )}
               <span className="min-w-0 flex-1 truncate text-[0.875rem]">{e.name}</span>
               {e.repository ? <span className="meta">looks like a project</span> : null}
             </button>

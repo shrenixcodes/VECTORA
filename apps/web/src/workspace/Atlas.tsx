@@ -1,7 +1,15 @@
 import { OrbitControls } from '@react-three/drei';
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber';
 import { ChevronRight, Globe, Image as ImageIcon, RotateCcw } from 'lucide-react';
-import { type MutableRefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { LayoutNode, LayoutRole } from '@vectora/graph-layout';
@@ -11,7 +19,15 @@ import { Loading } from '@/components/ui';
 import { downloadUrl } from '@/lib/api';
 import { fileIdOf, neighbourhood } from '@/lib/graphView';
 import { useWorkspace } from '@/lib/store';
-import { FAMILY_GLYPH, NODE_FAMILY, NODE_SIZE, type NodeFamily, type Palette, mix, nodeColor } from '@/lib/tokens';
+import {
+  FAMILY_GLYPH,
+  NODE_FAMILY,
+  NODE_SIZE,
+  type NodeFamily,
+  type Palette,
+  mix,
+  nodeColor,
+} from '@/lib/tokens';
 import type { Layout3DRequest, Layout3DResponse } from '@/workers/layout3d.worker';
 import { useWs } from './context';
 
@@ -54,8 +70,15 @@ function webglAvailable(): boolean {
 }
 
 /** Runs the 3D layout in a Web Worker and returns positions aligned with `nodes`. */
-function useLayout3d(nodes: GraphNode[], edges: GraphEdge[], parentOf: (n: GraphNode) => string | null, quality: Quality) {
-  const [result, setResult] = useState<{ positions: Float32Array; radius: number; ids: string[] } | null>(null);
+function useLayout3d(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  parentOf: (n: GraphNode) => string | null,
+  quality: Quality,
+) {
+  const [result, setResult] = useState<{ positions: Float32Array; radius: number; ids: string[] } | null>(
+    null,
+  );
   const workerRef = useRef<Worker | null>(null);
   const requestId = useRef(0);
   useEffect(() => {
@@ -68,17 +91,40 @@ function useLayout3d(nodes: GraphNode[], edges: GraphEdge[], parentOf: (n: Graph
     if (!worker) return;
     const id = ++requestId.current;
     const ids = nodes.map((n) => n.id);
-    const layoutNodes: LayoutNode[] = nodes.map((n) => ({ id: n.id, role: roleOf(n), subsystem: (n.metadata.subsystem as string | undefined) ?? null, parent: parentOf(n) }));
-    const layoutEdges = edges.filter((e) => e.type === 'IMPORTS' || e.type === 'CALLS' || e.type === 'USES' || e.type === 'EXTENDS').map((e) => ({ source: e.source, target: e.target }));
+    const layoutNodes: LayoutNode[] = nodes.map((n) => ({
+      id: n.id,
+      role: roleOf(n),
+      subsystem: (n.metadata.subsystem as string | undefined) ?? null,
+      parent: parentOf(n),
+    }));
+    const layoutEdges = edges
+      .filter((e) => e.type === 'IMPORTS' || e.type === 'CALLS' || e.type === 'USES' || e.type === 'EXTENDS')
+      .map((e) => ({ source: e.source, target: e.target }));
     worker.onmessage = (e: MessageEvent<Layout3DResponse>) => {
-      if (e.data.requestId === requestId.current) setResult({ positions: e.data.positions, radius: e.data.radius, ids });
+      if (e.data.requestId === requestId.current)
+        setResult({ positions: e.data.positions, radius: e.data.radius, ids });
     };
-    worker.postMessage({ requestId: id, nodes: layoutNodes, edges: layoutEdges, quality: quality === 'low' ? 0.2 : quality === 'high' ? 1 : 0.6 } satisfies Layout3DRequest);
+    worker.postMessage({
+      requestId: id,
+      nodes: layoutNodes,
+      edges: layoutEdges,
+      quality: quality === 'low' ? 0.2 : quality === 'high' ? 1 : 0.6,
+    } satisfies Layout3DRequest);
   }, [nodes, edges, parentOf, quality]);
   return result;
 }
 
-const FAMILIES: NodeFamily[] = ['structure', 'file', 'type', 'callable', 'data', 'endpoint', 'concept', 'external', 'value'];
+const FAMILIES: NodeFamily[] = [
+  'structure',
+  'file',
+  'type',
+  'callable',
+  'data',
+  'endpoint',
+  'concept',
+  'external',
+  'value',
+];
 
 function FamilyGeometry({ family, quality }: { family: NodeFamily; quality: Quality }) {
   const d = quality === 'low' ? 0 : 1;
@@ -129,7 +175,21 @@ interface LabelItem {
   detail: string | null;
 }
 
-function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBudget, reducedMotion, focusBehavior, apiRef, onExpand, onLabels, labelEls }: SceneProps) {
+function AtlasScene({
+  nodes,
+  edges,
+  positions,
+  radius,
+  palette,
+  quality,
+  labelBudget,
+  reducedMotion,
+  focusBehavior,
+  apiRef,
+  onExpand,
+  onLabels,
+  labelEls,
+}: SceneProps) {
   const { camera, invalidate, gl, scene } = useThree();
   const controls = useThree((s) => s.controls) as OrbitControlsImpl | null;
   const selectedIds = useWorkspace((s) => s.selectedIds);
@@ -141,7 +201,10 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
   const [nearLabels, setNearLabels] = useState<string[]>([]);
 
   const indexOf = useMemo(() => new Map(nodes.map((n, i) => [n.id, i])), [nodes]);
-  const pos = useCallback((i: number) => new THREE.Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]), [positions]);
+  const pos = useCallback(
+    (i: number) => new THREE.Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]),
+    [positions],
+  );
   const byFamily = useMemo(() => {
     const m = new Map<NodeFamily, number[]>();
     nodes.forEach((n, i) => {
@@ -200,7 +263,11 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
       for (const e of list) {
         const a = nodes[indexOf.get(e.source)!]!;
         const b = nodes[indexOf.get(e.target)!]!;
-        if ((isSymbolType(a.type) && isSymbolType(b.type) && a.filePath === b.filePath) || e.type === 'CONTAINS') fine.push(e);
+        if (
+          (isSymbolType(a.type) && isSymbolType(b.type) && a.filePath === b.filePath) ||
+          e.type === 'CONTAINS'
+        )
+          fine.push(e);
         else coarse.push(e);
       }
       const ordered = [...coarse, ...fine];
@@ -209,27 +276,52 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
       ordered.forEach((e, k) => {
         const a = indexOf.get(e.source)! * 3;
         const b = indexOf.get(e.target)! * 3;
-        p.set([positions[a]!, positions[a + 1]!, positions[a + 2]!, positions[b]!, positions[b + 1]!, positions[b + 2]!], k * 6);
+        p.set(
+          [
+            positions[a]!,
+            positions[a + 1]!,
+            positions[a + 2]!,
+            positions[b]!,
+            positions[b + 1]!,
+            positions[b + 2]!,
+          ],
+          k * 6,
+        );
       });
       geometry.setAttribute('position', new THREE.BufferAttribute(p, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(ordered.length * 6), 3));
       return { geometry, ordered, coarseCount: coarse.length };
     };
     const usable = edges.filter((e) => indexOf.has(e.source) && indexOf.has(e.target));
-    return { verified: build(usable.filter((e) => e.verified)), derived: build(usable.filter((e) => !e.verified)) };
+    return {
+      verified: build(usable.filter((e) => e.verified)),
+      derived: build(usable.filter((e) => !e.verified)),
+    };
   }, [edges, nodes, indexOf, positions]);
-  useEffect(() => () => {
-    edgeSets.verified.geometry.dispose();
-    edgeSets.derived.geometry.dispose();
-  }, [edgeSets]);
+  useEffect(
+    () => () => {
+      edgeSets.verified.geometry.dispose();
+      edgeSets.derived.geometry.dispose();
+    },
+    [edgeSets],
+  );
   const derivedLine = useRef<THREE.LineSegments>(null);
   useLayoutEffect(() => {
     const c = new THREE.Color();
-    for (const [set, baseHex] of [[edgeSets.verified, palette.textMuted], [edgeSets.derived, palette.relationUnverified]] as const) {
+    for (const [set, baseHex] of [
+      [edgeSets.verified, palette.textMuted],
+      [edgeSets.derived, palette.relationUnverified],
+    ] as const) {
       const attr = set.geometry.getAttribute('color') as THREE.BufferAttribute;
       set.ordered.forEach((e, k) => {
         const on = active?.edges.has(e.id);
-        c.set(on ? (e.verified ? palette.relationActive : palette.relationUnverified) : mix(baseHex, palette.canvas, active ? 0.88 : e.type === 'CONTAINS' || !e.verified ? 0.72 : 0.5));
+        c.set(
+          on
+            ? e.verified
+              ? palette.relationActive
+              : palette.relationUnverified
+            : mix(baseHex, palette.canvas, active ? 0.88 : e.type === 'CONTAINS' || !e.verified ? 0.72 : 0.5),
+        );
         attr.setXYZ(k * 2, c.r, c.g, c.b);
         attr.setXYZ(k * 2 + 1, c.r, c.g, c.b);
       });
@@ -242,11 +334,25 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
   }, [edgeSets, palette, active, far, invalidate]);
 
   // ---- camera transitions -------------------------------------------------
-  const anim = useRef<{ fromP: THREE.Vector3; fromT: THREE.Vector3; toP: THREE.Vector3; toT: THREE.Vector3; start: number; duration: number } | null>(null);
+  const anim = useRef<{
+    fromP: THREE.Vector3;
+    fromT: THREE.Vector3;
+    toP: THREE.Vector3;
+    toT: THREE.Vector3;
+    start: number;
+    duration: number;
+  } | null>(null);
   const flyTo = useCallback(
     (toP: THREE.Vector3, toT: THREE.Vector3) => {
       const fromT = controls ? controls.target.clone() : new THREE.Vector3();
-      anim.current = { fromP: camera.position.clone(), fromT, toP, toT, start: performance.now(), duration: reducedMotion ? 0 : 820 };
+      anim.current = {
+        fromP: camera.position.clone(),
+        fromT,
+        toP,
+        toT,
+        start: performance.now(),
+        duration: reducedMotion ? 0 : 820,
+      };
       invalidate();
     },
     [camera, controls, invalidate, reducedMotion],
@@ -264,16 +370,29 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
     if (t >= 1) anim.current = null;
     else invalidate();
   });
-  const home = useCallback(() => flyTo(new THREE.Vector3(0, radius * 1.25, radius * 3.3), new THREE.Vector3(0, 0, 0)), [flyTo, radius]);
+  const home = useCallback(
+    () => flyTo(new THREE.Vector3(0, radius * 1.25, radius * 3.3), new THREE.Vector3(0, 0, 0)),
+    [flyTo, radius],
+  );
   const focusOn = useCallback(
     (id: string) => {
       const i = indexOf.get(id);
       if (i === undefined) return;
       const n = nodes[i]!;
       const target = pos(i);
-      const dist = n.type === 'Repository' ? radius * 2.6 : n.type === 'Subsystem' ? radius * 1.3 : n.type === 'Concept' || n.type === 'Package' ? radius * 0.7 : isSymbolType(n.type) ? 13 : 26;
+      const dist =
+        n.type === 'Repository'
+          ? radius * 2.6
+          : n.type === 'Subsystem'
+            ? radius * 1.3
+            : n.type === 'Concept' || n.type === 'Package'
+              ? radius * 0.7
+              : isSymbolType(n.type)
+                ? 13
+                : 26;
       // Look at the node from outside the structure, keeping the current side when the node is central.
-      const dir = target.lengthSq() > 4 ? target.clone().normalize() : camera.position.clone().sub(target).normalize();
+      const dir =
+        target.lengthSq() > 4 ? target.clone().normalize() : camera.position.clone().sub(target).normalize();
       dir.y += 0.25;
       flyTo(target.clone().add(dir.normalize().multiplyScalar(dist)), target);
     },
@@ -326,7 +445,9 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
     if (labelBudget === 0) return setNearLabels([]);
     const scored: [number, string][] = [];
     const v = new THREE.Vector3();
-    const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(
+      new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse),
+    );
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i]!;
       if (n.type === 'Repository' || n.type === 'Subsystem' || n.type === 'Concept') continue;
@@ -337,7 +458,16 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
     }
     scored.sort((a, b) => a[0] - b[0]);
     const limit = (isSymbol: boolean) => (isSymbol ? 18 : 60);
-    setNearLabels(scored.filter(([s, id]) => s * (NODE_SIZE[nodes[indexOf.get(id)!]!.type] + 1) < limit(isSymbolType(nodes[indexOf.get(id)!]!.type)) * 1.4).slice(0, labelBudget).map(([, id]) => id));
+    setNearLabels(
+      scored
+        .filter(
+          ([s, id]) =>
+            s * (NODE_SIZE[nodes[indexOf.get(id)!]!.type] + 1) <
+            limit(isSymbolType(nodes[indexOf.get(id)!]!.type)) * 1.4,
+        )
+        .slice(0, labelBudget)
+        .map(([, id]) => id),
+    );
   }, [camera, radius, edges.length, labelBudget, nodes, positions, indexOf]);
   useEffect(() => {
     const t = setTimeout(updateDetail, 80);
@@ -345,7 +475,8 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
   }, [updateDetail]);
 
   // ---- pointer interaction ------------------------------------------------
-  const idAt = (family: NodeFamily, instanceId: number | undefined) => (instanceId === undefined ? null : (nodes[byFamily.get(family)?.[instanceId] ?? -1]?.id ?? null));
+  const idAt = (family: NodeFamily, instanceId: number | undefined) =>
+    instanceId === undefined ? null : (nodes[byFamily.get(family)?.[instanceId] ?? -1]?.id ?? null);
   const handlers = (family: NodeFamily) => ({
     onClick: (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation();
@@ -378,7 +509,8 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
   // ---- labels -------------------------------------------------------------
   const labels = useMemo(() => {
     const ids = new Set<string>();
-    for (const n of nodes) if (n.type === 'Repository' || n.type === 'Subsystem' || n.type === 'Concept') ids.add(n.id);
+    for (const n of nodes)
+      if (n.type === 'Repository' || n.type === 'Subsystem' || n.type === 'Concept') ids.add(n.id);
     for (const id of selectedIds) ids.add(id);
     if (hoverId) ids.add(hoverId);
     if (active) [...active.nodes].slice(0, 28).forEach((id) => ids.add(id));
@@ -394,7 +526,16 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
         const n = nodes[indexOf.get(id)!]!;
         const major = n.type === 'Repository' || n.type === 'Subsystem' || n.type === 'Concept';
         const on = id === hoverId || selectedIds.includes(id);
-        return { id, text: n.name, glyph: FAMILY_GLYPH[NODE_FAMILY[n.type]], major, root: n.type === 'Repository', on, dim: !!active && !active.nodes.has(id) && !on, detail: id === hoverId && !major ? NODE_TYPE_LABELS[n.type] : null };
+        return {
+          id,
+          text: n.name,
+          glyph: FAMILY_GLYPH[NODE_FAMILY[n.type]],
+          major,
+          root: n.type === 'Repository',
+          on,
+          dim: !!active && !active.nodes.has(id) && !on,
+          detail: id === hoverId && !major ? NODE_TYPE_LABELS[n.type] : null,
+        };
       }),
     [labels, nodes, indexOf, hoverId, selectedIds, active],
   );
@@ -410,7 +551,13 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
       const el = labelEls.current.get(item.id);
       const i = indexOf.get(item.id);
       if (!el || i === undefined) continue;
-      projected.set(positions[i * 3]!, positions[i * 3 + 1]! + NODE_SIZE[nodes[i]!.type] * 0.42 + 0.6, positions[i * 3 + 2]!).project(camera);
+      projected
+        .set(
+          positions[i * 3]!,
+          positions[i * 3 + 1]! + NODE_SIZE[nodes[i]!.type] * 0.42 + 0.6,
+          positions[i * 3 + 2]!,
+        )
+        .project(camera);
       // Behind the camera or outside the view: hide instead of drawing at a mirrored position.
       if (projected.z > 1 || Math.abs(projected.x) > 1.1 || Math.abs(projected.y) > 1.1) {
         el.style.visibility = 'hidden';
@@ -423,7 +570,16 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
 
   return (
     <>
-      <OrbitControls makeDefault enableDamping dampingFactor={0.14} rotateSpeed={0.6} zoomSpeed={0.8} minDistance={4} maxDistance={radius * 9} onEnd={updateDetail} />
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.14}
+        rotateSpeed={0.6}
+        zoomSpeed={0.8}
+        minDistance={4}
+        maxDistance={radius * 9}
+        onEnd={updateDetail}
+      />
       {FAMILIES.map((family) => {
         const count = byFamily.get(family)?.length ?? 0;
         if (!count) return null;
@@ -457,7 +613,9 @@ export function Atlas() {
   const { view, adj, palette, settings, reducedMotion, expandFile, openView, theme } = useWs();
   const primaryId = useWorkspace((s) => s.primaryId);
   const focusId = useWorkspace((s) => s.focusId);
-  const [gl, setGl] = useState<'ok' | 'unsupported' | 'lost'>(() => (webglAvailable() ? 'ok' : 'unsupported'));
+  const [gl, setGl] = useState<'ok' | 'unsupported' | 'lost'>(() =>
+    webglAvailable() ? 'ok' : 'unsupported',
+  );
   const [attempt, setAttempt] = useState(0);
   const apiRef = useRef<AtlasApi | null>(null);
   const [labelItems, setLabelItems] = useState<LabelItem[]>([]);
@@ -473,13 +631,30 @@ export function Atlas() {
     [adj],
   );
   const layout = useLayout3d(view.nodes, view.edges, parentOf, quality);
-  const current = layout && layout.ids.length === view.nodes.length && layout.ids[0] === view.nodes[0]?.id && layout.ids[layout.ids.length - 1] === view.nodes[view.nodes.length - 1]?.id ? layout : null;
+  const current =
+    layout &&
+    layout.ids.length === view.nodes.length &&
+    layout.ids[0] === view.nodes[0]?.id &&
+    layout.ids[layout.ids.length - 1] === view.nodes[view.nodes.length - 1]?.id
+      ? layout
+      : null;
 
   // The scene keeps showing the previous arrangement until the next one is ready, so changing a
   // filter or entering focus mode never blanks the view or tears down the renderer.
-  const [shown, setShown] = useState<{ nodes: GraphNode[]; edges: GraphEdge[]; positions: Float32Array; radius: number } | null>(null);
+  const [shown, setShown] = useState<{
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    positions: Float32Array;
+    radius: number;
+  } | null>(null);
   useEffect(() => {
-    if (current) setShown({ nodes: view.nodes, edges: view.edges, positions: current.positions, radius: current.radius });
+    if (current)
+      setShown({
+        nodes: view.nodes,
+        edges: view.edges,
+        positions: current.positions,
+        radius: current.radius,
+      });
   }, [current]); // eslint-disable-line react-hooks/exhaustive-deps
   const alive = useRef(true);
   useEffect(() => {
@@ -496,7 +671,10 @@ export function Atlas() {
       if (n.type === 'File' || n.type === 'Configuration') return expandFile(id);
       if (n.type === 'Subsystem' || n.type === 'Concept') {
         // Unfold the files of a region.
-        (adj.in.get(id) ?? []).filter((e) => e.type === 'BELONGS_TO').slice(0, 60).forEach((e) => expandFile(e.source, true));
+        (adj.in.get(id) ?? [])
+          .filter((e) => e.type === 'BELONGS_TO')
+          .slice(0, 60)
+          .forEach((e) => expandFile(e.source, true));
         return;
       }
       const fid = fileIdOf(n);
@@ -515,18 +693,24 @@ export function Atlas() {
     if (sub && sub.id !== primary.id) out.push(sub);
     const file = isSymbolType(primary.type) ? adj.nodes.get(fileIdOf(primary) ?? '') : undefined;
     if (file) out.push(file);
-    const parent = isSymbolType(primary.type) ? adj.nodes.get((adj.in.get(primary.id) ?? []).find((e) => e.type === 'CONTAINS')?.source ?? '') : undefined;
+    const parent = isSymbolType(primary.type)
+      ? adj.nodes.get((adj.in.get(primary.id) ?? []).find((e) => e.type === 'CONTAINS')?.source ?? '')
+      : undefined;
     if (parent && isSymbolType(parent.type)) out.push(parent);
     out.push(primary);
     return out;
   }, [primary, adj]);
-  const subsystemId = (primary?.metadata.subsystem as string | undefined) ?? (primary?.type === 'Subsystem' ? primary.id : undefined);
+  const subsystemId =
+    (primary?.metadata.subsystem as string | undefined) ??
+    (primary?.type === 'Subsystem' ? primary.id : undefined);
   const labelBudget = quality === 'low' ? 0 : { low: 6, medium: 16, high: 40 }[settings.graph.labelDensity];
 
   if (gl !== 'ok')
     return (
       <div className="mx-auto max-w-[56ch] px-6 py-16" data-testid="atlas-fallback">
-        <h2 className="font-editorial text-[1.375rem]">{gl === 'lost' ? 'The 3D view lost its graphics context' : '3D rendering is not available here'}</h2>
+        <h2 className="font-editorial text-[1.375rem]">
+          {gl === 'lost' ? 'The 3D view lost its graphics context' : '3D rendering is not available here'}
+        </h2>
         <p className="label mt-3 text-[0.9375rem]">
           {gl === 'lost'
             ? 'The browser reclaimed the graphics memory used by the Atlas. Your selection and filters are kept.'
@@ -554,7 +738,11 @@ export function Atlas() {
   return (
     <div className="relative h-full w-full" data-testid="atlas">
       <ViewToolbar status={current ? undefined : 'arranging'}>
-        <button className="btn btn-sm bg-elevated" onClick={() => apiRef.current?.reset()} data-testid="atlas-reset">
+        <button
+          className="btn btn-sm bg-elevated"
+          onClick={() => apiRef.current?.reset()}
+          data-testid="atlas-reset"
+        >
           <RotateCcw size={13} strokeWidth={1.5} aria-hidden="true" />
           Reset camera
         </button>
@@ -564,7 +752,10 @@ export function Atlas() {
           </button>
         ) : null}
         {primary && focusId !== primary.id ? (
-          <button className="btn btn-sm bg-elevated" onClick={() => useWorkspace.getState().setFocus(primary.id)}>
+          <button
+            className="btn btn-sm bg-elevated"
+            onClick={() => useWorkspace.getState().setFocus(primary.id)}
+          >
             Show connected neighbourhood
           </button>
         ) : null}
@@ -615,7 +806,10 @@ export function Atlas() {
           <color attach="background" args={[palette.canvas]} key={theme} />
           <fog attach="fog" args={[palette.canvas, shown.radius * 2.4, shown.radius * 9]} />
           <ambientLight intensity={theme === 'dark' ? 1.5 : 2.1} />
-          <directionalLight position={[shown.radius, shown.radius * 2, shown.radius]} intensity={theme === 'dark' ? 1.4 : 1.1} />
+          <directionalLight
+            position={[shown.radius, shown.radius * 2, shown.radius]}
+            intensity={theme === 'dark' ? 1.4 : 1.1}
+          />
           <AtlasScene
             nodes={shown.nodes}
             edges={shown.edges}
@@ -666,7 +860,11 @@ export function Atlas() {
           ))}
         </div>
       ) : null}
-      <nav aria-label="Location in the atlas" className="absolute bottom-3 left-3 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-1 bg-canvas/85 px-2 py-1" data-testid="atlas-breadcrumb">
+      <nav
+        aria-label="Location in the atlas"
+        className="absolute bottom-3 left-3 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-1 bg-canvas/85 px-2 py-1"
+        data-testid="atlas-breadcrumb"
+      >
         {crumbs.map((c, i) => (
           <span key={c.id} className="flex items-center gap-1">
             {i > 0 ? <ChevronRight size={11} className="text-ink-3" aria-hidden="true" /> : null}
@@ -688,7 +886,9 @@ export function Atlas() {
           </span>
         ))}
       </nav>
-      <p className="meta pointer-events-none absolute bottom-3 right-3 hidden bg-canvas/80 px-2 py-1 lg:block">Drag to orbit, right-drag to pan, scroll to zoom, double-click to unfold</p>
+      <p className="meta pointer-events-none absolute bottom-3 right-3 hidden bg-canvas/80 px-2 py-1 lg:block">
+        Drag to orbit, right-drag to pan, scroll to zoom, double-click to unfold
+      </p>
     </div>
   );
 }

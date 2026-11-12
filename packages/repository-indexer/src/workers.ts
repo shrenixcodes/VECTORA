@@ -7,7 +7,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
-import { type AnalyzeContext, type FileFacts, type SourceFileInput, type WorkspacePackage, createAdapters, emptyFacts } from '@vectora/language-adapters';
+import {
+  type AnalyzeContext,
+  type FileFacts,
+  type SourceFileInput,
+  type WorkspacePackage,
+  createAdapters,
+  emptyFacts,
+} from '@vectora/language-adapters';
 
 export interface AnalyzeTask {
   adapterId: string;
@@ -33,7 +40,11 @@ export type WorkerResponse =
   | { type: 'done'; taskIndex: number; facts: FileFacts[] }
   | { type: 'error'; taskIndex: number; message: string };
 
-export async function runTaskInProcess(task: AnalyzeTask, ctx: TaskContext, onProgress?: (processed: number, total: number) => void): Promise<FileFacts[]> {
+export async function runTaskInProcess(
+  task: AnalyzeTask,
+  ctx: TaskContext,
+  onProgress?: (processed: number, total: number) => void,
+): Promise<FileFacts[]> {
   const adapter = createAdapters().find((a) => a.id === task.adapterId);
   if (!adapter) throw new Error(`Unknown adapter ${task.adapterId}`);
   const actx: AnalyzeContext = {
@@ -73,7 +84,11 @@ export interface RunOptions {
   onProgress?: (processed: number, total: number) => void;
 }
 
-export async function runTasks(tasks: AnalyzeTask[], ctx: TaskContext, opts: RunOptions): Promise<{ facts: FileFacts[]; usedWorkers: boolean }> {
+export async function runTasks(
+  tasks: AnalyzeTask[],
+  ctx: TaskContext,
+  opts: RunOptions,
+): Promise<{ facts: FileFacts[]; usedWorkers: boolean }> {
   const totals = tasks.map((t) => (t.analyzeOnly ? t.analyzeOnly.length : t.files.length));
   const total = totals.reduce((a, b) => a + b, 0);
   const progress = tasks.map(() => 0);
@@ -124,7 +139,10 @@ export async function runTasks(tasks: AnalyzeTask[], ctx: TaskContext, opts: Run
       if (queue.length === 0) return resolve();
       let worker: Worker;
       try {
-        worker = new Worker(entry.file, { execArgv: entry.execArgv, resourceLimits: { maxOldGenerationSizeMb: 3072 } });
+        worker = new Worker(entry.file, {
+          execArgv: entry.execArgv,
+          resourceLimits: { maxOldGenerationSizeMb: 3072 },
+        });
       } catch {
         startFailure = true;
         return resolve();
@@ -145,7 +163,10 @@ export async function runTasks(tasks: AnalyzeTask[], ctx: TaskContext, opts: Run
         gotMessage = true;
         if (msg.type === 'progress') report(msg.taskIndex, msg.processed);
         else {
-          results[msg.taskIndex] = msg.type === 'done' ? msg.facts : failedFacts(tasks[msg.taskIndex]!, `Analysis failed: ${msg.message}`);
+          results[msg.taskIndex] =
+            msg.type === 'done'
+              ? msg.facts
+              : failedFacts(tasks[msg.taskIndex]!, `Analysis failed: ${msg.message}`);
           report(msg.taskIndex, totals[msg.taskIndex]!);
           next();
         }
@@ -179,6 +200,7 @@ export async function runTasks(tasks: AnalyzeTask[], ctx: TaskContext, opts: Run
     return { facts: results.flat(), usedWorkers: false };
   }
   // Tasks left over because every worker died after starting.
-  for (const i of queue.splice(0)) results[i] = failedFacts(tasks[i]!, 'Analysis worker stopped before this batch was processed');
+  for (const i of queue.splice(0))
+    results[i] = failedFacts(tasks[i]!, 'Analysis worker stopped before this batch was processed');
   return { facts: results.flat(), usedWorkers: true };
 }

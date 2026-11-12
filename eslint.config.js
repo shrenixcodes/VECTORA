@@ -4,7 +4,18 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', 'node_modules/**', 'coverage/**', 'samples/**', '.vectora-data/**', 'test-results/**', 'playwright-report/**', '.bench-tmp/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'samples/**',
+      '.vectora-data/**',
+      'test-results/**',
+      'playwright-report/**',
+      '.bench-tmp/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

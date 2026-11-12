@@ -53,8 +53,27 @@ const SPRING_MAPPINGS: Record<string, string> = {
   PatchMapping: 'PATCH',
   RequestMapping: 'ANY',
 };
-const ASPNET_ATTRS: Record<string, string> = { HttpGet: 'GET', HttpPost: 'POST', HttpPut: 'PUT', HttpDelete: 'DELETE', HttpPatch: 'PATCH' };
-const GO_ROUTE_FUNCS = new Set(['HandleFunc', 'Handle', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'Get', 'Post', 'Put', 'Delete', 'Patch']);
+const ASPNET_ATTRS: Record<string, string> = {
+  HttpGet: 'GET',
+  HttpPost: 'POST',
+  HttpPut: 'PUT',
+  HttpDelete: 'DELETE',
+  HttpPatch: 'PATCH',
+};
+const GO_ROUTE_FUNCS = new Set([
+  'HandleFunc',
+  'Handle',
+  'GET',
+  'POST',
+  'PUT',
+  'DELETE',
+  'PATCH',
+  'Get',
+  'Post',
+  'Put',
+  'Delete',
+  'Patch',
+]);
 
 class FileExtractor {
   facts: FileFacts;
@@ -71,7 +90,12 @@ class FileExtractor {
   }
 
   loc(n: Node): SourceLocation {
-    return { path: this.file.path, startLine: n.startPosition.row + 1, endLine: n.endPosition.row + 1, startColumn: n.startPosition.column };
+    return {
+      path: this.file.path,
+      startLine: n.startPosition.row + 1,
+      endLine: n.endPosition.row + 1,
+      startColumn: n.startPosition.column,
+    };
   }
   evidence(n: Node): string {
     return evidenceLine(this.lines[n.startPosition.row] ?? '');
@@ -79,7 +103,8 @@ class FileExtractor {
   /** Leading `//`, `///` or block comment directly above a declaration. */
   doc(n: Node): string | undefined {
     const prev = n.previousNamedSibling;
-    if (!prev || !/comment/.test(prev.type) || n.startPosition.row - prev.endPosition.row > 1) return undefined;
+    if (!prev || !/comment/.test(prev.type) || n.startPosition.row - prev.endPosition.row > 1)
+      return undefined;
     const text = prev.text
       .replace(/^\/\*+|\*+\/$/g, '')
       .split('\n')
@@ -89,13 +114,35 @@ class FileExtractor {
     if (!text) return undefined;
     return text.length > 300 ? `${text.slice(0, 297)}...` : text;
   }
-  symbol(n: Node, name: string, kind: NodeType, parent: string | null, exported: boolean, metadata: Record<string, unknown> = {}): string {
+  symbol(
+    n: Node,
+    name: string,
+    kind: NodeType,
+    parent: string | null,
+    exported: boolean,
+    metadata: Record<string, unknown> = {},
+  ): string {
     const localId = uniqueLocalId(this.used, parent ? `${parent}.${name}` : name);
     const description = this.doc(n);
-    this.facts.symbols.push({ localId, name, kind, parent, location: this.loc(n), exported, metadata, ...(description ? { description } : {}) });
+    this.facts.symbols.push({
+      localId,
+      name,
+      kind,
+      parent,
+      location: this.loc(n),
+      exported,
+      metadata,
+      ...(description ? { description } : {}),
+    });
     return localId;
   }
-  endpoint(n: Node, method: string, routePath: string, handler: string | null, handlerName?: { name: string; receiver?: string }): void {
+  endpoint(
+    n: Node,
+    method: string,
+    routePath: string,
+    handler: string | null,
+    handlerName?: { name: string; receiver?: string },
+  ): void {
     const p = routePath.startsWith('/') ? routePath : `/${routePath}`;
     const localId = uniqueLocalId(this.used, `route:${method} ${p}`);
     this.facts.symbols.push({
@@ -122,7 +169,14 @@ class FileExtractor {
       this.ref('ROUTES_TO', localId, handlerName.name, n, handlerName.receiver);
     }
   }
-  ref(kind: EdgeType, from: string | null, name: string, n: Node, receiver?: string, metadata?: Record<string, unknown>): void {
+  ref(
+    kind: EdgeType,
+    from: string | null,
+    name: string,
+    n: Node,
+    receiver?: string,
+    metadata?: Record<string, unknown>,
+  ): void {
     if (!name) return;
     const key = `${kind}|${from}|${receiver ?? ''}|${name}`;
     if (this.seen.has(key)) return;
@@ -139,7 +193,12 @@ class FileExtractor {
       ...(metadata ? { metadata } : {}),
     });
   }
-  import(n: Node, specifier: string, names: { imported: string; local: string }[], kind: 'static' | 'include' = 'static'): void {
+  import(
+    n: Node,
+    specifier: string,
+    names: { imported: string; local: string }[],
+    kind: 'static' | 'include' = 'static',
+  ): void {
     this.facts.imports.push({ specifier, names, kind, location: this.loc(n), evidence: this.evidence(n) });
   }
 }
@@ -149,7 +208,15 @@ const named = (n: Node): Node[] => n.namedChildren.filter((c): c is Node => !!c)
 const stripQuotes = (s: string): string => s.replace(/^[<"'`]|[>"'`]$/g, '');
 const lastSegment = (s: string, sep: string | RegExp): string => s.split(sep).filter(Boolean).pop() ?? s;
 const firstString = (n: Node): string | null => {
-  const hit = n.descendantsOfType(['string_literal', 'interpreted_string_literal', 'raw_string_literal', 'string_content', 'string_literal_content']).find((x) => !!x);
+  const hit = n
+    .descendantsOfType([
+      'string_literal',
+      'interpreted_string_literal',
+      'raw_string_literal',
+      'string_content',
+      'string_literal_content',
+    ])
+    .find((x) => !!x);
   return hit ? stripQuotes(hit.text) : null;
 };
 
@@ -198,7 +265,9 @@ const javaCalls: CallSpec = {
       return { name, receiver: obj ? obj.text.slice(0, 60) : undefined };
     },
   },
-  news: { object_creation_expression: (n) => lastSegment(field(n, 'type')?.text.replace(/<.*$/, '') ?? '', '.') },
+  news: {
+    object_creation_expression: (n) => lastSegment(field(n, 'type')?.text.replace(/<.*$/, '') ?? '', '.'),
+  },
   stop: new Set(['class_declaration', 'interface_declaration', 'enum_declaration', 'record_declaration']),
 };
 
@@ -209,22 +278,28 @@ function javaAnnotations(n: Node): { name: string; node: Node }[] {
     .filter((c) => c.type === 'marker_annotation' || c.type === 'annotation')
     .map((c) => ({ name: lastSegment(field(c, 'name')?.text ?? '', '.'), node: c }));
 }
-const javaIsPublic = (n: Node): boolean => !/\bprivate\b/.test(named(n).find((c) => c.type === 'modifiers')?.text ?? '');
+const javaIsPublic = (n: Node): boolean =>
+  !/\bprivate\b/.test(named(n).find((c) => c.type === 'modifiers')?.text ?? '');
 
 const walkJava: Walker = (ex, root) => {
   const visitType = (n: Node, parent: string | null) => {
     const name = field(n, 'name')?.text;
     if (!name) return;
     const ann = javaAnnotations(n);
-    const kindBase: NodeType = n.type === 'interface_declaration' ? 'Interface' : n.type === 'enum_declaration' ? 'Type' : 'Class';
-    const kind: NodeType = ann.some((a) => a.name === 'Entity' || a.name === 'Table' || a.name === 'Document') ? 'DatabaseModel' : kindBase;
+    const kindBase: NodeType =
+      n.type === 'interface_declaration' ? 'Interface' : n.type === 'enum_declaration' ? 'Type' : 'Class';
+    const kind: NodeType = ann.some((a) => a.name === 'Entity' || a.name === 'Table' || a.name === 'Document')
+      ? 'DatabaseModel'
+      : kindBase;
     const id = ex.symbol(n, name, kind, parent, javaIsPublic(n), { annotations: ann.map((a) => a.name) });
     const sup = field(n, 'superclass');
-    if (sup) for (const t of sup.descendantsOfType('type_identifier')) if (t) ex.ref('EXTENDS', id, t.text, t);
+    if (sup)
+      for (const t of sup.descendantsOfType('type_identifier')) if (t) ex.ref('EXTENDS', id, t.text, t);
     const ifs = field(n, 'interfaces') ?? named(n).find((c) => c.type === 'extends_interfaces');
     if (ifs)
       for (const t of ifs.descendantsOfType('type_identifier'))
-        if (t && t.parent?.type !== 'type_arguments') ex.ref(n.type === 'interface_declaration' ? 'EXTENDS' : 'IMPLEMENTS', id, t.text, t);
+        if (t && t.parent?.type !== 'type_arguments')
+          ex.ref(n.type === 'interface_declaration' ? 'EXTENDS' : 'IMPLEMENTS', id, t.text, t);
     const classMapping = ann.find((a) => a.name === 'RequestMapping');
     const basePath = classMapping ? (firstString(classMapping.node) ?? '') : '';
     const body = field(n, 'body');
@@ -233,17 +308,30 @@ const walkJava: Walker = (ex, root) => {
       if (m.type === 'method_declaration' || m.type === 'constructor_declaration') {
         const mname = field(m, 'name')?.text ?? 'constructor';
         const mann = javaAnnotations(m);
-        const mid = ex.symbol(m, mname, 'Method', id, javaIsPublic(m), { annotations: mann.map((a) => a.name) });
+        const mid = ex.symbol(m, mname, 'Method', id, javaIsPublic(m), {
+          annotations: mann.map((a) => a.name),
+        });
         for (const a of mann) {
           const http = SPRING_MAPPINGS[a.name];
-          if (http) ex.endpoint(a.node, http, `${basePath}/${firstString(a.node) ?? ''}`.replace(/\/+/g, '/').replace(/(.)\/$/, '$1'), mid);
+          if (http)
+            ex.endpoint(
+              a.node,
+              http,
+              `${basePath}/${firstString(a.node) ?? ''}`.replace(/\/+/g, '/').replace(/(.)\/$/, '$1'),
+              mid,
+            );
         }
         const params = field(m, 'parameters');
-        if (params) for (const t of params.descendantsOfType('type_identifier')) if (t) ex.ref('USES', mid, t.text, t, undefined, { typeOnly: true });
+        if (params)
+          for (const t of params.descendantsOfType('type_identifier'))
+            if (t) ex.ref('USES', mid, t.text, t, undefined, { typeOnly: true });
         collectCalls(ex, field(m, 'body'), mid, javaCalls);
       } else if (m.type === 'field_declaration') {
         const t = field(m, 'type');
-        if (t) for (const ti of [t, ...t.descendantsOfType('type_identifier')]) if (ti && ti.type === 'type_identifier') ex.ref('USES', id, ti.text, ti, undefined, { typeOnly: true });
+        if (t)
+          for (const ti of [t, ...t.descendantsOfType('type_identifier')])
+            if (ti && ti.type === 'type_identifier')
+              ex.ref('USES', id, ti.text, ti, undefined, { typeOnly: true });
         collectCalls(ex, m, id, javaCalls);
       } else if (/_declaration$/.test(m.type) && field(m, 'name')) {
         visitType(m, id);
@@ -252,12 +340,17 @@ const walkJava: Walker = (ex, root) => {
   };
   for (const n of named(root)) {
     if (n.type === 'package_declaration') {
-      ex.facts.moduleName = named(n).find((c) => c.type === 'scoped_identifier' || c.type === 'identifier')?.text;
+      ex.facts.moduleName = named(n).find(
+        (c) => c.type === 'scoped_identifier' || c.type === 'identifier',
+      )?.text;
     } else if (n.type === 'import_declaration') {
-      const path = named(n).find((c) => c.type === 'scoped_identifier' || c.type === 'identifier')?.text ?? '';
+      const path =
+        named(n).find((c) => c.type === 'scoped_identifier' || c.type === 'identifier')?.text ?? '';
       const wildcard = n.text.includes('*');
       const name = lastSegment(path, '.');
-      ex.import(n, wildcard ? `${path}.*` : path, [{ imported: wildcard ? '*' : name, local: wildcard ? '*' : name }]);
+      ex.import(n, wildcard ? `${path}.*` : path, [
+        { imported: wildcard ? '*' : name, local: wildcard ? '*' : name },
+      ]);
     } else if (/_declaration$/.test(n.type)) {
       visitType(n, null);
     }
@@ -274,14 +367,19 @@ const goCalls: CallSpec = {
       const fn = field(n, 'function');
       if (!fn) return null;
       if (fn.type === 'identifier') return { name: fn.text };
-      if (fn.type === 'selector_expression') return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'operand')?.text };
+      if (fn.type === 'selector_expression')
+        return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'operand')?.text };
       return null;
     },
   },
   news: {
     composite_literal: (n) => {
       const t = field(n, 'type');
-      return t?.type === 'type_identifier' ? t.text : t?.type === 'qualified_type' ? (field(t, 'name')?.text ?? null) : null;
+      return t?.type === 'type_identifier'
+        ? t.text
+        : t?.type === 'qualified_type'
+          ? (field(t, 'name')?.text ?? null)
+          : null;
     },
   },
   stop: new Set(),
@@ -325,7 +423,9 @@ const walkGo: Walker = (ex, root) => {
           if (!spec) continue;
           const p = stripQuotes(field(spec, 'path')?.text ?? '');
           const alias = field(spec, 'name')?.text;
-          ex.import(spec, p, [{ imported: '*', local: alias && alias !== '_' && alias !== '.' ? alias : lastSegment(p, '/') }]);
+          ex.import(spec, p, [
+            { imported: '*', local: alias && alias !== '_' && alias !== '.' ? alias : lastSegment(p, '/') },
+          ]);
         }
         break;
       case 'function_declaration': {
@@ -353,16 +453,32 @@ const walkGo: Walker = (ex, root) => {
           const name = field(spec, 'name')?.text;
           if (!name) continue;
           const t = field(spec, 'type');
-          const kind: NodeType = t?.type === 'interface_type' ? 'Interface' : t?.type === 'struct_type' ? 'Class' : 'Type';
+          const kind: NodeType =
+            t?.type === 'interface_type' ? 'Interface' : t?.type === 'struct_type' ? 'Class' : 'Type';
           const tags = t?.type === 'struct_type' && /`[^`]*(gorm|db|bson):/.test(t.text);
-          const id = ex.symbol(n.namedChildCount === 1 ? n : spec, name, tags ? 'DatabaseModel' : kind, null, goExported(name), { goKind: t?.type });
+          const id = ex.symbol(
+            n.namedChildCount === 1 ? n : spec,
+            name,
+            tags ? 'DatabaseModel' : kind,
+            null,
+            goExported(name),
+            { goKind: t?.type },
+          );
           if (t?.type === 'struct_type')
             for (const f of t.descendantsOfType('field_declaration')) {
               if (!f) continue;
               const ft = field(f, 'type');
               const tid = ft?.type === 'type_identifier' ? ft : ft?.descendantsOfType('type_identifier')[0];
               // An embedded field (no name) is Go's form of composition/inheritance.
-              if (tid) ex.ref(field(f, 'name') ? 'USES' : 'EXTENDS', id, tid.text, tid, undefined, field(f, 'name') ? { typeOnly: true } : { embedded: true });
+              if (tid)
+                ex.ref(
+                  field(f, 'name') ? 'USES' : 'EXTENDS',
+                  id,
+                  tid.text,
+                  tid,
+                  undefined,
+                  field(f, 'name') ? { typeOnly: true } : { embedded: true },
+                );
             }
         }
         break;
@@ -372,7 +488,13 @@ const walkGo: Walker = (ex, root) => {
           if (!spec) continue;
           const name = field(spec, 'name')?.text;
           if (name && name !== '_') {
-            const id = ex.symbol(spec, name, n.type === 'const_declaration' ? 'Constant' : 'Variable', null, goExported(name));
+            const id = ex.symbol(
+              spec,
+              name,
+              n.type === 'const_declaration' ? 'Constant' : 'Variable',
+              null,
+              goExported(name),
+            );
             collectCalls(ex, field(spec, 'value'), id, goCalls);
           }
         }
@@ -393,8 +515,10 @@ const rustCalls: CallSpec = {
       const fn = field(n, 'function');
       if (!fn) return null;
       if (fn.type === 'identifier') return { name: fn.text };
-      if (fn.type === 'scoped_identifier') return { name: field(fn, 'name')?.text ?? '', receiver: field(fn, 'path')?.text };
-      if (fn.type === 'field_expression') return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'value')?.text.slice(0, 60) };
+      if (fn.type === 'scoped_identifier')
+        return { name: field(fn, 'name')?.text ?? '', receiver: field(fn, 'path')?.text };
+      if (fn.type === 'field_expression')
+        return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'value')?.text.slice(0, 60) };
       return null;
     },
   },
@@ -418,12 +542,21 @@ const walkRust: Walker = (ex, root) => {
         out.push({ path: prefix ? `${prefix}::${n.text}` : n.text, name: n.text, local: n.text });
         break;
       case 'scoped_identifier':
-        out.push({ path: prefix ? `${prefix}::${n.text}` : n.text, name: field(n, 'name')?.text ?? '', local: field(n, 'name')?.text ?? '' });
+        out.push({
+          path: prefix ? `${prefix}::${n.text}` : n.text,
+          name: field(n, 'name')?.text ?? '',
+          local: field(n, 'name')?.text ?? '',
+        });
         break;
       case 'use_as_clause': {
         const p = field(n, 'path');
         const alias = field(n, 'alias')?.text ?? '';
-        if (p) out.push({ path: prefix ? `${prefix}::${p.text}` : p.text, name: lastSegment(p.text, '::'), local: alias });
+        if (p)
+          out.push({
+            path: prefix ? `${prefix}::${p.text}` : p.text,
+            name: lastSegment(p.text, '::'),
+            local: alias,
+          });
         break;
       }
       case 'use_wildcard': {
@@ -457,7 +590,14 @@ const walkRust: Walker = (ex, root) => {
     const name = field(n, 'name')?.text;
     if (!name) return;
     const attrs = attrsBefore(n);
-    const id = ex.symbol(n, name, kind, parent, rustPub(n), attrs.length ? { attributes: attrs.map((a) => a.slice(0, 80)) } : {});
+    const id = ex.symbol(
+      n,
+      name,
+      kind,
+      parent,
+      rustPub(n),
+      attrs.length ? { attributes: attrs.map((a) => a.slice(0, 80)) } : {},
+    );
     for (const a of attrs) {
       const m = /#\[\s*(get|post|put|delete|patch)\s*\(\s*"([^"]+)"/i.exec(a);
       if (m) ex.endpoint(n, m[1]!.toUpperCase(), m[2]!, id);
@@ -491,10 +631,21 @@ const walkRust: Walker = (ex, root) => {
           const name = field(n, 'name')?.text;
           if (!name) break;
           const attrs = attrsBefore(n).join(' ');
-          const model = /derive\([^)]*(Queryable|Insertable|FromRow|Model|Entity)/.test(attrs) || /#\[\s*(table_name|sea_orm|diesel)/.test(attrs);
-          const id = ex.symbol(n, name, model ? 'DatabaseModel' : n.type === 'struct_item' ? 'Class' : 'Type', prefix, rustPub(n), { rustKind: n.type.replace('_item', '') });
+          const model =
+            /derive\([^)]*(Queryable|Insertable|FromRow|Model|Entity)/.test(attrs) ||
+            /#\[\s*(table_name|sea_orm|diesel)/.test(attrs);
+          const id = ex.symbol(
+            n,
+            name,
+            model ? 'DatabaseModel' : n.type === 'struct_item' ? 'Class' : 'Type',
+            prefix,
+            rustPub(n),
+            { rustKind: n.type.replace('_item', '') },
+          );
           const body = field(n, 'body');
-          if (body) for (const t of body.descendantsOfType('type_identifier')) if (t) ex.ref('USES', id, t.text, t, undefined, { typeOnly: true });
+          if (body)
+            for (const t of body.descendantsOfType('type_identifier'))
+              if (t) ex.ref('USES', id, t.text, t, undefined, { typeOnly: true });
           break;
         }
         case 'trait_item': {
@@ -502,20 +653,31 @@ const walkRust: Walker = (ex, root) => {
           if (!name) break;
           const id = ex.symbol(n, name, 'Interface', prefix, rustPub(n));
           const body = field(n, 'body');
-          if (body) for (const f of named(body)) if (f.type === 'function_item' || f.type === 'function_signature_item') visitFn(f, id, 'Method');
+          if (body)
+            for (const f of named(body))
+              if (f.type === 'function_item' || f.type === 'function_signature_item')
+                visitFn(f, id, 'Method');
           break;
         }
         case 'impl_item': {
           const typeNode = field(n, 'type');
           const typeName = typeNode ? lastSegment(typeNode.text.replace(/<.*$/, ''), '::') : null;
           const traitNode = field(n, 'trait');
-          const owner = typeName && ex.facts.symbols.some((s) => s.localId === (prefix ? `${prefix}.${typeName}` : typeName)) ? (prefix ? `${prefix}.${typeName}` : typeName) : null;
+          const owner =
+            typeName &&
+            ex.facts.symbols.some((s) => s.localId === (prefix ? `${prefix}.${typeName}` : typeName))
+              ? prefix
+                ? `${prefix}.${typeName}`
+                : typeName
+              : null;
           if (traitNode && typeName) {
             const traitName = lastSegment(traitNode.text.replace(/<.*$/, ''), '::');
             if (owner) ex.ref('IMPLEMENTS', owner, traitName, traitNode);
           }
           const body = field(n, 'body');
-          if (body) for (const f of named(body)) if (f.type === 'function_item') visitFn(f, owner, owner ? 'Method' : 'Function');
+          if (body)
+            for (const f of named(body))
+              if (f.type === 'function_item') visitFn(f, owner, owner ? 'Method' : 'Function');
           break;
         }
         case 'const_item':
@@ -547,8 +709,10 @@ const cCalls: CallSpec = {
       const fn = field(n, 'function');
       if (!fn) return null;
       if (fn.type === 'identifier') return { name: fn.text };
-      if (fn.type === 'field_expression') return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'argument')?.text.slice(0, 60) };
-      if (fn.type === 'qualified_identifier') return { name: lastSegment(fn.text, '::'), receiver: fn.text.split('::').slice(0, -1).join('::') };
+      if (fn.type === 'field_expression')
+        return { name: field(fn, 'field')?.text ?? '', receiver: field(fn, 'argument')?.text.slice(0, 60) };
+      if (fn.type === 'qualified_identifier')
+        return { name: lastSegment(fn.text, '::'), receiver: fn.text.split('::').slice(0, -1).join('::') };
       if (fn.type === 'template_function') return { name: field(fn, 'name')?.text ?? '' };
       return null;
     },
@@ -568,7 +732,13 @@ function declaratorName(d: Node | null): { name: string; scope: string | null; i
   let isFunction = false;
   for (let i = 0; cur && i < 8; i++) {
     if (cur.type === 'function_declarator') isFunction = true;
-    if (cur.type === 'identifier' || cur.type === 'field_identifier' || cur.type === 'type_identifier' || cur.type === 'destructor_name' || cur.type === 'operator_name')
+    if (
+      cur.type === 'identifier' ||
+      cur.type === 'field_identifier' ||
+      cur.type === 'type_identifier' ||
+      cur.type === 'destructor_name' ||
+      cur.type === 'operator_name'
+    )
       return { name: cur.text, scope: null, isFunction };
     if (cur.type === 'qualified_identifier') {
       const parts = cur.text.split('::');
@@ -587,7 +757,8 @@ const walkC: Walker = (ex, root) => {
         case 'preproc_include': {
           const p = field(n, 'path');
           if (p) ex.import(n, stripQuotes(p.text), [{ imported: '*', local: '*' }], 'include');
-          if (p && p.type === 'system_lib_string') ex.facts.imports[ex.facts.imports.length - 1]!.externalPackage = stripQuotes(p.text);
+          if (p && p.type === 'system_lib_string')
+            ex.facts.imports[ex.facts.imports.length - 1]!.externalPackage = stripQuotes(p.text);
           break;
         }
         case 'preproc_def': {
@@ -616,7 +787,11 @@ const walkC: Walker = (ex, root) => {
           break;
         }
         case 'template_declaration':
-          visit(named(n).filter((c) => c.type !== 'template_parameter_list'), parent, ns);
+          visit(
+            named(n).filter((c) => c.type !== 'template_parameter_list'),
+            parent,
+            ns,
+          );
           break;
         case 'function_definition': {
           const d = declaratorName(field(n, 'declarator'));
@@ -624,7 +799,14 @@ const walkC: Walker = (ex, root) => {
           // `Foo::bar` defined out of line belongs to class Foo when Foo is declared in this file.
           const owner = d.scope ? lastSegment(d.scope, '::') : null;
           const ownerId = owner && ex.facts.symbols.some((s) => s.localId === owner) ? owner : parent;
-          const id = ex.symbol(n, d.name, ownerId || d.scope ? 'Method' : 'Function', ownerId, !/\bstatic\b/.test(n.text.slice(0, 40)), d.scope ? { scope: d.scope } : {});
+          const id = ex.symbol(
+            n,
+            d.name,
+            ownerId || d.scope ? 'Method' : 'Function',
+            ownerId,
+            !/\bstatic\b/.test(n.text.slice(0, 40)),
+            d.scope ? { scope: d.scope } : {},
+          );
           collectCalls(ex, field(n, 'body'), id, cCalls);
           break;
         }
@@ -634,11 +816,18 @@ const walkC: Walker = (ex, root) => {
           const name = field(n, 'name')?.text;
           const body = field(n, 'body');
           if (!name || !body) break;
-          const id = ex.symbol(n, name, 'Class', parent, true, { cKind: n.type.replace('_specifier', ''), ...(ns ? { namespace: ns } : {}) });
+          const id = ex.symbol(n, name, 'Class', parent, true, {
+            cKind: n.type.replace('_specifier', ''),
+            ...(ns ? { namespace: ns } : {}),
+          });
           const bases = named(n).find((c) => c.type === 'base_class_clause');
           if (bases)
             for (const b of named(bases))
-              if (b.type === 'type_identifier' || b.type === 'qualified_identifier' || b.type === 'template_type')
+              if (
+                b.type === 'type_identifier' ||
+                b.type === 'qualified_identifier' ||
+                b.type === 'template_type'
+              )
                 ex.ref('EXTENDS', id, lastSegment(b.text.replace(/<.*$/, ''), '::'), b);
           for (const m of named(body)) {
             if (m.type === 'function_definition') {
@@ -667,7 +856,14 @@ const walkC: Walker = (ex, root) => {
           const d = declaratorName(field(n, 'declarator'));
           const t = field(n, 'type');
           if (t && /_specifier$/.test(t.type) && field(t, 'body') && field(t, 'name')) visit([t], parent, ns);
-          else if (d) ex.symbol(n, d.name, t && /struct|union/.test(t.type) && field(t, 'body') ? 'Class' : 'Type', parent, true);
+          else if (d)
+            ex.symbol(
+              n,
+              d.name,
+              t && /struct|union/.test(t.type) && field(t, 'body') ? 'Class' : 'Type',
+              parent,
+              true,
+            );
           break;
         }
         case 'alias_declaration': {
@@ -684,7 +880,13 @@ const walkC: Walker = (ex, root) => {
             // Prototypes are recorded for headers only; the definition carries the body.
             if (isHeader) ex.symbol(n, d.name, 'Function', parent, true, { declarationOnly: true });
           } else if (!parent) {
-            const id = ex.symbol(n, d.name, /\bconst\b/.test(n.text.slice(0, 60)) ? 'Constant' : 'Variable', parent, !/\bstatic\b/.test(n.text.slice(0, 40)));
+            const id = ex.symbol(
+              n,
+              d.name,
+              /\bconst\b/.test(n.text.slice(0, 60)) ? 'Constant' : 'Variable',
+              parent,
+              !/\bstatic\b/.test(n.text.slice(0, 40)),
+            );
             collectCalls(ex, n, id, cCalls);
           }
           break;
@@ -710,7 +912,10 @@ const csCalls: CallSpec = {
       if (fn.type === 'generic_name') return { name: named(fn)[0]?.text ?? '' };
       if (fn.type === 'member_access_expression') {
         const nm = field(fn, 'name');
-        return { name: nm?.type === 'generic_name' ? (named(nm)[0]?.text ?? '') : (nm?.text ?? ''), receiver: field(fn, 'expression')?.text.slice(0, 60) };
+        return {
+          name: nm?.type === 'generic_name' ? (named(nm)[0]?.text ?? '') : (nm?.text ?? ''),
+          receiver: field(fn, 'expression')?.text.slice(0, 60),
+        };
       }
       return null;
     },
@@ -728,9 +933,13 @@ function csAttributes(n: Node): { name: string; node: Node }[] {
   return named(n)
     .filter((c) => c.type === 'attribute_list')
     .flatMap((l) => named(l).filter((a) => a.type === 'attribute'))
-    .map((a) => ({ name: lastSegment(field(a, 'name')?.text ?? '', '.').replace(/Attribute$/, ''), node: a }));
+    .map((a) => ({
+      name: lastSegment(field(a, 'name')?.text ?? '', '.').replace(/Attribute$/, ''),
+      node: a,
+    }));
 }
-const csPublic = (n: Node): boolean => named(n).some((c) => c.type === 'modifier' && /public|internal/.test(c.text));
+const csPublic = (n: Node): boolean =>
+  named(n).some((c) => c.type === 'modifier' && /public|internal/.test(c.text));
 
 const walkCSharp: Walker = (ex, root) => {
   const visit = (items: Node[], parent: string | null) => {
@@ -757,16 +966,29 @@ const walkCSharp: Walker = (ex, root) => {
           if (!name) break;
           const attrs = csAttributes(n);
           const baseList = named(n).find((c) => c.type === 'base_list');
-          const bases = baseList ? named(baseList).map((b) => lastSegment(b.text.replace(/<.*$/, ''), '.')) : [];
-          let kind: NodeType = n.type === 'interface_declaration' ? 'Interface' : n.type === 'enum_declaration' ? 'Type' : 'Class';
-          if (attrs.some((a) => a.name === 'Table' || a.name === 'Entity') || bases.includes('DbContext')) kind = 'DatabaseModel';
+          const bases = baseList
+            ? named(baseList).map((b) => lastSegment(b.text.replace(/<.*$/, ''), '.'))
+            : [];
+          let kind: NodeType =
+            n.type === 'interface_declaration'
+              ? 'Interface'
+              : n.type === 'enum_declaration'
+                ? 'Type'
+                : 'Class';
+          if (attrs.some((a) => a.name === 'Table' || a.name === 'Entity') || bases.includes('DbContext'))
+            kind = 'DatabaseModel';
           const id = ex.symbol(n, name, kind, parent, csPublic(n), { attributes: attrs.map((a) => a.name) });
           if (baseList)
             named(baseList).forEach((b, i) => {
               const bn = lastSegment(b.text.replace(/<.*$/, ''), '.');
               // By convention interface names start with `I` followed by an upper-case letter.
               const isInterface = /^I[A-Z]/.test(bn);
-              ex.ref(n.type === 'interface_declaration' || (!isInterface && i === 0) ? 'EXTENDS' : 'IMPLEMENTS', id, bn, b);
+              ex.ref(
+                n.type === 'interface_declaration' || (!isInterface && i === 0) ? 'EXTENDS' : 'IMPLEMENTS',
+                id,
+                bn,
+                b,
+              );
             });
           const routeAttr = attrs.find((a) => a.name === 'Route');
           const basePath = routeAttr ? (firstString(routeAttr.node) ?? '') : '';
@@ -776,16 +998,28 @@ const walkCSharp: Walker = (ex, root) => {
             if (m.type === 'method_declaration' || m.type === 'constructor_declaration') {
               const mname = field(m, 'name')?.text ?? 'constructor';
               const mattrs = csAttributes(m);
-              const mid = ex.symbol(m, mname, 'Method', id, csPublic(m), { attributes: mattrs.map((a) => a.name) });
+              const mid = ex.symbol(m, mname, 'Method', id, csPublic(m), {
+                attributes: mattrs.map((a) => a.name),
+              });
               for (const a of mattrs) {
                 const http = ASPNET_ATTRS[a.name];
-                if (http) ex.endpoint(a.node, http, `${basePath}/${firstString(a.node) ?? ''}`.replace(/\/+/g, '/').replace(/(.)\/$/, '$1'), mid);
+                if (http)
+                  ex.endpoint(
+                    a.node,
+                    http,
+                    `${basePath}/${firstString(a.node) ?? ''}`.replace(/\/+/g, '/').replace(/(.)\/$/, '$1'),
+                    mid,
+                  );
               }
               collectCalls(ex, field(m, 'body') ?? m, mid, csCalls);
             } else if (m.type === 'property_declaration' || m.type === 'field_declaration') {
-              const t = field(m, 'type') ?? m.descendantsOfType('variable_declaration')[0]?.childForFieldName('type') ?? null;
+              const t =
+                field(m, 'type') ??
+                m.descendantsOfType('variable_declaration')[0]?.childForFieldName('type') ??
+                null;
               if (t && (t.type === 'identifier' || t.type === 'generic_name'))
-                for (const idn of t.type === 'identifier' ? [t] : t.descendantsOfType('identifier')) if (idn) ex.ref('USES', id, idn.text, idn, undefined, { typeOnly: true });
+                for (const idn of t.type === 'identifier' ? [t] : t.descendantsOfType('identifier'))
+                  if (idn) ex.ref('USES', id, idn.text, idn, undefined, { typeOnly: true });
               collectCalls(ex, m, id, csCalls);
             } else if (/_declaration$/.test(m.type)) {
               visit([m], id);
@@ -801,7 +1035,14 @@ const walkCSharp: Walker = (ex, root) => {
   visit(named(root), null);
 };
 
-const WALKERS: Record<string, Walker> = { java: walkJava, go: walkGo, rust: walkRust, c: walkC, cpp: walkC, csharp: walkCSharp };
+const WALKERS: Record<string, Walker> = {
+  java: walkJava,
+  go: walkGo,
+  rust: walkRust,
+  c: walkC,
+  cpp: walkC,
+  csharp: walkCSharp,
+};
 
 export function createTreeSitterAdapter(): LanguageAdapter {
   return {
@@ -852,7 +1093,11 @@ export function createTreeSitterAdapter(): LanguageAdapter {
             tree.delete();
           }
         } catch (err) {
-          facts.errors.push({ path: file.path, message: `Analysis failed: ${(err as Error).message}`, severity: 'error' });
+          facts.errors.push({
+            path: file.path,
+            message: `Analysis failed: ${(err as Error).message}`,
+            severity: 'error',
+          });
         }
         out.push(facts);
         done++;

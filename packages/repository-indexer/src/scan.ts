@@ -32,7 +32,15 @@ export interface ScanOptions {
 
 export interface ScanResult {
   files: ScannedFile[];
-  skipped: { ignored: number; binary: number; oversized: number; generated: number; symlinks: number; unreadable: number; overLimit: number };
+  skipped: {
+    ignored: number;
+    binary: number;
+    oversized: number;
+    generated: number;
+    symlinks: number;
+    unreadable: number;
+    overLimit: number;
+  };
   truncated: boolean;
 }
 
@@ -58,7 +66,15 @@ export async function scanRepository(rootDir: string, opts: ScanOptions = {}): P
   const root = path.resolve(rootDir);
   const maxSize = opts.maxFileSizeBytes ?? 512 * 1024;
   const maxFiles = opts.maxFiles ?? 20000;
-  const skipped = { ignored: 0, binary: 0, oversized: 0, generated: 0, symlinks: 0, unreadable: 0, overLimit: 0 };
+  const skipped = {
+    ignored: 0,
+    binary: 0,
+    oversized: 0,
+    generated: 0,
+    symlinks: 0,
+    unreadable: 0,
+    overLimit: 0,
+  };
 
   const entries = await fg('**/*', {
     cwd: root,
@@ -123,7 +139,9 @@ export async function scanRepository(rootDir: string, opts: ScanOptions = {}): P
     skipped.overLimit = candidates.length - maxFiles;
     // Prefer analysable source files when the limit is hit.
     const score = (p: string) => (languageTier(detectLanguage(p) ?? '') > 0 ? 0 : 1);
-    list = [...candidates].sort((a, b) => score(a.rel) - score(b.rel) || (a.rel < b.rel ? -1 : 1)).slice(0, maxFiles);
+    list = [...candidates]
+      .sort((a, b) => score(a.rel) - score(b.rel) || (a.rel < b.rel ? -1 : 1))
+      .slice(0, maxFiles);
     list.sort((a, b) => (a.rel < b.rel ? -1 : 1));
   }
 

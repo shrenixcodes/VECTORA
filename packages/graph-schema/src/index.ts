@@ -190,11 +190,7 @@ export const KnowledgeGraphSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const normalizePath = (p: string): string =>
-  p
-    .replace(/\\/g, '/')
-    .replace(/^\.\//, '')
-    .replace(/\/+/g, '/')
-    .replace(/\/$/, '');
+  p.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+/g, '/').replace(/\/$/, '');
 
 export const nodeId = {
   repository: (): string => 'repo:root',
@@ -208,7 +204,8 @@ export const nodeId = {
   config: (path: string): string => `cfg:${normalizePath(path)}`,
 };
 
-export const edgeId = (type: EdgeType, source: string, target: string): string => `${type}|${source}|${target}`;
+export const edgeId = (type: EdgeType, source: string, target: string): string =>
+  `${type}|${source}|${target}`;
 
 // ---------------------------------------------------------------------------
 // Validation and normalization
@@ -254,18 +251,25 @@ export function validateGraph(
   };
   const ids = new Set<string>();
   for (const n of graph.nodes) {
-    if (ids.has(n.id)) push({ severity: 'error', code: 'duplicate-node', message: `Duplicate node id ${n.id}`, id: n.id });
+    if (ids.has(n.id))
+      push({ severity: 'error', code: 'duplicate-node', message: `Duplicate node id ${n.id}`, id: n.id });
     ids.add(n.id);
     if (opts.checkSchema) {
       const r = GraphNodeSchema.safeParse(n);
       if (!r.success)
-        push({ severity: 'error', code: 'invalid-node', message: `${n.id}: ${r.error.issues[0]?.message ?? 'invalid'}`, id: n.id });
+        push({
+          severity: 'error',
+          code: 'invalid-node',
+          message: `${n.id}: ${r.error.issues[0]?.message ?? 'invalid'}`,
+          id: n.id,
+        });
     }
   }
   const edgeIds = new Set<string>();
   const connected = new Set<string>();
   for (const e of graph.edges) {
-    if (edgeIds.has(e.id)) push({ severity: 'error', code: 'duplicate-edge', message: `Duplicate edge id ${e.id}`, id: e.id });
+    if (edgeIds.has(e.id))
+      push({ severity: 'error', code: 'duplicate-edge', message: `Duplicate edge id ${e.id}`, id: e.id });
     edgeIds.add(e.id);
     if (!ids.has(e.source) || !ids.has(e.target)) {
       push({
@@ -279,17 +283,38 @@ export function validateGraph(
     connected.add(e.source);
     connected.add(e.target);
     if (e.source === e.target && !SELF_LOOP_ALLOWED.has(e.type))
-      push({ severity: 'warning', code: 'self-loop', message: `Self-referencing ${e.type} edge on ${e.source}`, id: e.id });
-    if (!e.evidence) push({ severity: 'warning', code: 'missing-evidence', message: `Edge ${e.id} has no evidence`, id: e.id });
+      push({
+        severity: 'warning',
+        code: 'self-loop',
+        message: `Self-referencing ${e.type} edge on ${e.source}`,
+        id: e.id,
+      });
+    if (!e.evidence)
+      push({
+        severity: 'warning',
+        code: 'missing-evidence',
+        message: `Edge ${e.id} has no evidence`,
+        id: e.id,
+      });
     if (opts.checkSchema) {
       const r = GraphEdgeSchema.safeParse(e);
       if (!r.success)
-        push({ severity: 'error', code: 'invalid-edge', message: `${e.id}: ${r.error.issues[0]?.message ?? 'invalid'}`, id: e.id });
+        push({
+          severity: 'error',
+          code: 'invalid-edge',
+          message: `${e.id}: ${r.error.issues[0]?.message ?? 'invalid'}`,
+          id: e.id,
+        });
     }
   }
   for (const n of graph.nodes) {
     if (!connected.has(n.id) && n.type !== 'Repository')
-      push({ severity: 'warning', code: 'orphan-node', message: `Node ${n.id} has no relationships`, id: n.id });
+      push({
+        severity: 'warning',
+        code: 'orphan-node',
+        message: `Node ${n.id} has no relationships`,
+        id: n.id,
+      });
   }
   const errorCount = issues.filter((i) => i.severity === 'error').length;
   return { valid: errorCount === 0, issues, errorCount, warningCount: issues.length - errorCount };
@@ -303,7 +328,13 @@ export function validateGraph(
 export function normalizeGraph(
   nodes: GraphNode[],
   edges: GraphEdge[],
-): { nodes: GraphNode[]; edges: GraphEdge[]; removedNodes: number; mergedEdges: number; droppedEdges: number } {
+): {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  removedNodes: number;
+  mergedEdges: number;
+  droppedEdges: number;
+} {
   const nodeMap = new Map<string, GraphNode>();
   let removedNodes = 0;
   for (const n of nodes) {
@@ -323,8 +354,10 @@ export function normalizeGraph(
       mergedEdges++;
       const meta = (existing.metadata ??= {});
       meta.occurrences = ((meta.occurrences as number | undefined) ?? 1) + 1;
-      const lines = (meta.lines as number[] | undefined) ?? (existing.location ? [existing.location.startLine] : []);
-      if (e.location && lines.length < 20 && !lines.includes(e.location.startLine)) lines.push(e.location.startLine);
+      const lines =
+        (meta.lines as number[] | undefined) ?? (existing.location ? [existing.location.startLine] : []);
+      if (e.location && lines.length < 20 && !lines.includes(e.location.startLine))
+        lines.push(e.location.startLine);
       meta.lines = lines;
       // Keep the strongest claim when the same relationship is found twice.
       if (e.confidence > existing.confidence) {
@@ -336,7 +369,13 @@ export function normalizeGraph(
       edgeMap.set(e.id, { ...e, metadata: e.metadata ? { ...e.metadata } : undefined });
     }
   }
-  return { nodes: [...nodeMap.values()], edges: [...edgeMap.values()], removedNodes, mergedEdges, droppedEdges };
+  return {
+    nodes: [...nodeMap.values()],
+    edges: [...edgeMap.values()],
+    removedNodes,
+    mergedEdges,
+    droppedEdges,
+  };
 }
 
 export function computeStats(nodes: GraphNode[], edges: GraphEdge[], unresolvedCount = 0): GraphStats {

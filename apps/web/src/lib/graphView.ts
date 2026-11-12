@@ -3,7 +3,14 @@
  * current filters. All three views call this with the same inputs, so they
  * always present the same underlying graph.
  */
-import { type EdgeType, type GraphEdge, type GraphNode, type KnowledgeGraph, type NodeType, isSymbolType } from '@vectora/graph-schema';
+import {
+  type EdgeType,
+  type GraphEdge,
+  type GraphNode,
+  type KnowledgeGraph,
+  type NodeType,
+  isSymbolType,
+} from '@vectora/graph-schema';
 
 export interface ViewOptions {
   density: 'structure' | 'balanced' | 'full';
@@ -44,12 +51,22 @@ export function buildAdjacency(graph: Pick<KnowledgeGraph, 'nodes' | 'edges'>): 
   return { nodes, out, in: inn };
 }
 
-const PROMINENT: ReadonlySet<NodeType> = new Set(['Class', 'DatabaseModel', 'ApiEndpoint', 'Component', 'Interface']);
+const PROMINENT: ReadonlySet<NodeType> = new Set([
+  'Class',
+  'DatabaseModel',
+  'ApiEndpoint',
+  'Component',
+  'Interface',
+]);
 const BALANCED_LIMIT = 1200;
 
 export const fileIdOf = (n: GraphNode): string | null => (n.filePath ? `file:${n.filePath}` : null);
 
-export function deriveView(graph: Pick<KnowledgeGraph, 'nodes' | 'edges'>, adj: Adjacency, o: ViewOptions): GraphView {
+export function deriveView(
+  graph: Pick<KnowledgeGraph, 'nodes' | 'edges'>,
+  adj: Adjacency,
+  o: ViewOptions,
+): GraphView {
   const hiddenTypes = new Set(o.hiddenNodeTypes);
   const hiddenEdges = new Set(o.hiddenEdgeTypes);
   const expanded = new Set(o.expandedIds);
@@ -128,7 +145,10 @@ export function deriveView(graph: Pick<KnowledgeGraph, 'nodes' | 'edges'>, adj: 
 }
 
 /** Node ids within one hop of `id` over the given edges (the node itself included). */
-export function neighbourhood(id: string, edges: readonly GraphEdge[]): { nodes: Set<string>; edges: Set<string> } {
+export function neighbourhood(
+  id: string,
+  edges: readonly GraphEdge[],
+): { nodes: Set<string>; edges: Set<string> } {
   const nodes = new Set<string>([id]);
   const edgeIds = new Set<string>();
   for (const e of edges) {
@@ -159,12 +179,16 @@ export function relationsOf(id: string, adj: Adjacency): Relations {
   const parentEdge = inn.find((e) => e.type === 'CONTAINS');
   const fileNode = node && isSymbolType(node.type) ? adj.nodes.get(fileIdOf(node) ?? '') : node;
   const conceptIds = (fileNode?.metadata.concepts as string[] | undefined) ?? [];
-  const subsystemId = (node?.metadata.subsystem as string | undefined) ?? (fileNode?.metadata.subsystem as string | undefined);
+  const subsystemId =
+    (node?.metadata.subsystem as string | undefined) ?? (fileNode?.metadata.subsystem as string | undefined);
   return {
     incoming: inn.filter((e) => !HIERARCHY.has(e.type)),
     outgoing: out.filter((e) => !HIERARCHY.has(e.type)),
     parent: parentEdge ? (adj.nodes.get(parentEdge.source) ?? null) : null,
-    children: out.filter((e) => e.type === 'CONTAINS').map((e) => adj.nodes.get(e.target)).filter((n): n is GraphNode => !!n),
+    children: out
+      .filter((e) => e.type === 'CONTAINS')
+      .map((e) => adj.nodes.get(e.target))
+      .filter((n): n is GraphNode => !!n),
     concepts: conceptIds.map((c) => adj.nodes.get(c)).filter((n): n is GraphNode => !!n),
     subsystem: subsystemId ? (adj.nodes.get(subsystemId) ?? null) : null,
   };

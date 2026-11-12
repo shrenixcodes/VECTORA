@@ -7,7 +7,16 @@
  * subsystem under a force simulation, and symbols orbit their file. Concepts
  * and external packages get their own layers above and below.
  */
-import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, forceZ, type SimNode } from 'd3-force-3d';
+import {
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+  forceX,
+  forceY,
+  forceZ,
+  type SimNode,
+} from 'd3-force-3d';
 
 export type LayoutRole = 'repository' | 'subsystem' | 'concept' | 'package' | 'container' | 'file' | 'symbol';
 
@@ -55,7 +64,11 @@ interface Sim extends SimNode {
   az: number;
 }
 
-export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3DOptions = {}): Layout3DResult {
+export function layout3d(
+  nodes: LayoutNode[],
+  edges: LayoutEdge[],
+  opts: Layout3DOptions = {},
+): Layout3DResult {
   const n = nodes.length;
   const positions = new Float32Array(n * 3);
   const indexOf = new Map<string, number>();
@@ -68,7 +81,9 @@ export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3
 
   const subsystems = nodes.filter((x) => x.role === 'subsystem');
   const members = new Map<string, number>();
-  for (const node of nodes) if ((node.role === 'file' || node.role === 'container') && node.subsystem) members.set(node.subsystem, (members.get(node.subsystem) ?? 0) + 1);
+  for (const node of nodes)
+    if ((node.role === 'file' || node.role === 'container') && node.subsystem)
+      members.set(node.subsystem, (members.get(node.subsystem) ?? 0) + 1);
   const largest = Math.max(1, ...members.values());
   const structural = nodes.filter((x) => x.role === 'file' || x.role === 'container').length;
   // Regions must be far enough apart for the largest cluster to fit.
@@ -83,7 +98,11 @@ export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3
     let p: [number, number, number];
     if (subsystems.length <= 7) {
       const a = (k / subsystems.length) * Math.PI * 2 + Math.PI / 6;
-      p = [Math.cos(a) * radius, (k % 2 === 0 ? 1 : -1) * radius * (subsystems.length > 2 ? 0.14 : 0), Math.sin(a) * radius];
+      p = [
+        Math.cos(a) * radius,
+        (k % 2 === 0 ? 1 : -1) * radius * (subsystems.length > 2 ? 0.14 : 0),
+        Math.sin(a) * radius,
+      ];
     } else {
       p = fibonacciPoint(k, subsystems.length, radius);
       p[1] *= 0.62;
@@ -96,7 +115,12 @@ export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3
     list.forEach((node, k) => {
       const a = (k / Math.max(1, list.length)) * Math.PI * 2;
       const rr = r * (list.length > 24 ? 0.7 + 0.3 * ((k % 3) / 2) : 1);
-      set(indexOf.get(node.id)!, Math.cos(a) * rr, y + (list.length > 24 ? ((k % 3) - 1) * 5 : 0), Math.sin(a) * rr);
+      set(
+        indexOf.get(node.id)!,
+        Math.cos(a) * rr,
+        y + (list.length > 24 ? ((k % 3) - 1) * 5 : 0),
+        Math.sin(a) * rr,
+      );
     });
   };
   ring('concept', radius * 0.78, radius * 0.5);
@@ -128,7 +152,9 @@ export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3
       links.push({ source: s, target: t });
     }
     const quality = opts.quality ?? 0.6;
-    const ticks = Math.round((structural > 6000 ? 30 : structural > 2000 ? 60 : structural > 600 ? 110 : 170) * (0.5 + quality));
+    const ticks = Math.round(
+      (structural > 6000 ? 30 : structural > 2000 ? 60 : structural > 600 ? 110 : 170) * (0.5 + quality),
+    );
     const sim = forceSimulation(sims, 3)
       .alphaDecay(1 - Math.pow(0.001, 1 / ticks))
       .velocityDecay(0.45)
@@ -181,7 +207,9 @@ export function layout3d(nodes: LayoutNode[], edges: LayoutEdge[], opts: Layout3
  * Deterministic starting positions for the 2D layout: one disc per group,
  * discs arranged on a circle. Force-directed refinement starts from here.
  */
-export function seed2d(nodes: { id: string; group: string | number | null }[]): Map<string, [number, number]> {
+export function seed2d(
+  nodes: { id: string; group: string | number | null }[],
+): Map<string, [number, number]> {
   const groups = new Map<string, string[]>();
   for (const node of nodes) {
     const g = String(node.group ?? '∅');

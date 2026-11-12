@@ -11,7 +11,15 @@ import { ViewToolbar } from '@/components/ViewControls';
 import { downloadUrl } from '@/lib/api';
 import { fileIdOf, neighbourhood } from '@/lib/graphView';
 import { useWorkspace } from '@/lib/store';
-import { FAMILY_GLYPH, NODE_FAMILY, NODE_SIZE, STRUCTURE_EDGES, type Palette, mix, nodeColor } from '@/lib/tokens';
+import {
+  FAMILY_GLYPH,
+  NODE_FAMILY,
+  NODE_SIZE,
+  STRUCTURE_EDGES,
+  type Palette,
+  mix,
+  nodeColor,
+} from '@/lib/tokens';
 import { useWs } from './context';
 
 type Grouping = 'subsystem' | 'community';
@@ -40,7 +48,14 @@ export function GraphExplorer() {
   const sigmaRef = useRef<Sigma | null>(null);
   const graphRef = useRef<Graph | null>(null);
   const layoutRef = useRef<{ stop: () => void } | null>(null);
-  const stateRef = useRef<RenderState>({ selected: new Set(), primary: null, hover: null, activeNodes: null, activeEdges: null, palette });
+  const stateRef = useRef<RenderState>({
+    selected: new Set(),
+    primary: null,
+    hover: null,
+    activeNodes: null,
+    activeEdges: null,
+    palette,
+  });
   const viewRef = useRef(view);
   viewRef.current = view;
   const [grouping, setGrouping] = useState<Grouping>('subsystem');
@@ -57,7 +72,9 @@ export function GraphExplorer() {
       out[id] = [Math.round(a.x * 100) / 100, Math.round(a.y * 100) / 100];
     });
     const entries = Object.entries(out);
-    useWorkspace.getState().setLayout('graph', entries.length > 20000 ? Object.fromEntries(entries.slice(-20000)) : out);
+    useWorkspace
+      .getState()
+      .setLayout('graph', entries.length > 20000 ? Object.fromEntries(entries.slice(-20000)) : out);
   }, []);
 
   const runLayout = useCallback(
@@ -66,13 +83,28 @@ export function GraphExplorer() {
       if (!g || g.order === 0) return;
       layoutRef.current?.stop();
       if (fromScratch) {
-        const seeds = seed2d(viewRef.current.nodes.map((n) => ({ id: n.id, group: groupingRef.current === 'community' ? (n.metadata.community as number | undefined ?? null) : ((n.metadata.subsystem as string | undefined) ?? n.type) })));
+        const seeds = seed2d(
+          viewRef.current.nodes.map((n) => ({
+            id: n.id,
+            group:
+              groupingRef.current === 'community'
+                ? ((n.metadata.community as number | undefined) ?? null)
+                : ((n.metadata.subsystem as string | undefined) ?? n.type),
+          })),
+        );
         g.forEachNode((id) => {
           const p = seeds.get(id);
           if (p) g.mergeNodeAttributes(id, { x: p[0], y: p[1] });
         });
       }
-      const fa2 = { ...forceAtlas2.inferSettings(g), barnesHutOptimize: g.order > 1200, gravity: 0.5, scalingRatio: 8, slowDown: 6 + Math.log(g.order + 1), strongGravityMode: false };
+      const fa2 = {
+        ...forceAtlas2.inferSettings(g),
+        barnesHutOptimize: g.order > 1200,
+        gravity: 0.5,
+        scalingRatio: 8,
+        slowDown: 6 + Math.log(g.order + 1),
+        strongGravityMode: false,
+      };
       const finish = () => {
         noverlap.assign(g, { maxIterations: g.order > 3000 ? 15 : 60, settings: { margin: 2, ratio: 1.1 } });
         setArranging(false);
@@ -241,7 +273,10 @@ export function GraphExplorer() {
       const ctx = c.getContext('2d');
       if (!ctx) return;
       const p = stateRef.current.palette;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
       g.forEachNode((_, a) => {
         if (a.x < minX) minX = a.x;
         if (a.x > maxX) maxX = a.x;
@@ -254,7 +289,10 @@ export function GraphExplorer() {
       const k = Math.min(sx, sy);
       const ox = (c.width - (maxX - minX) * k) / 2;
       const oy = (c.height - (maxY - minY) * k) / 2;
-      const map = (x: number, y: number): [number, number] => [ox + (x - minX) * k, c.height - (oy + (y - minY) * k)];
+      const map = (x: number, y: number): [number, number] => [
+        ox + (x - minX) * k,
+        c.height - (oy + (y - minY) * k),
+      ];
       ctx.clearRect(0, 0, c.width, c.height);
       const step = Math.max(1, Math.floor(g.order / 2500));
       let i = 0;
@@ -273,7 +311,10 @@ export function GraphExplorer() {
       ctx.strokeStyle = p.selection;
       ctx.lineWidth = 1;
       ctx.strokeRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
-      (c as HTMLCanvasElement & { _unmap?: (px: number, py: number) => { x: number; y: number } })._unmap = (px, py) => ({ x: minX + (px - ox) / k, y: minY + (c.height - py - oy) / k });
+      (c as HTMLCanvasElement & { _unmap?: (px: number, py: number) => { x: number; y: number } })._unmap = (
+        px,
+        py,
+      ) => ({ x: minX + (px - ox) / k, y: minY + (c.height - py - oy) / k });
     };
     sigma.on('afterRender', () => {
       if (pending) return;
@@ -341,7 +382,9 @@ export function GraphExplorer() {
     const firstRun = fresh.length === view.nodes.length;
     if (fresh.length && !firstRun) {
       fresh.forEach((n, i) => {
-        const anchor = [fileIdOf(n), n.metadata.subsystem as string | undefined].find((a) => a && a !== n.id && g.hasNode(a) && !fresh.some((f) => f.id === a));
+        const anchor = [fileIdOf(n), n.metadata.subsystem as string | undefined].find(
+          (a) => a && a !== n.id && g.hasNode(a) && !fresh.some((f) => f.id === a),
+        );
         const a = anchor ? g.getNodeAttributes(anchor) : { x: 0, y: 0 };
         const t = i * 2.399963;
         const r = 2 + Math.sqrt(i + 1) * 1.6;
@@ -354,7 +397,11 @@ export function GraphExplorer() {
       const structural = STRUCTURE_EDGES.includes(e.type);
       g.addEdgeWithKey(e.id, e.source, e.target, {
         size: !e.verified ? 0.5 : structural ? 0.6 : 1,
-        color: mix(e.verified ? palette.textMuted : palette.relationUnverified, palette.canvas, structural ? 0.55 : 0.3),
+        color: mix(
+          e.verified ? palette.textMuted : palette.relationUnverified,
+          palette.canvas,
+          structural ? 0.55 : 0.3,
+        ),
         type: structural ? 'line' : 'arrow',
         relation: EDGE_TYPE_LABELS[e.type],
         verified: e.verified,
@@ -390,7 +437,8 @@ export function GraphExplorer() {
     const centre = hoverId ?? primaryId;
     if (centre && graphRef.current?.hasNode(centre)) {
       const nb = neighbourhood(centre, view.edges);
-      for (const id of selectedIds) if (id !== centre) for (const x of neighbourhood(id, view.edges).nodes) nb.nodes.add(x);
+      for (const id of selectedIds)
+        if (id !== centre) for (const x of neighbourhood(id, view.edges).nodes) nb.nodes.add(x);
       s.activeNodes = nb.nodes;
       s.activeEdges = nb.edges;
     } else if (highlight) {
@@ -411,7 +459,13 @@ export function GraphExplorer() {
     const t = setTimeout(() => {
       if (id && graphRef.current?.hasNode(id) && settings.graph.focusBehavior !== 'none') {
         const d = sigma.getNodeDisplayData(id);
-        if (d) void sigma.getCamera().animate({ x: d.x, y: d.y, ratio: Math.min(sigma.getCamera().ratio, 0.4) }, { duration: reducedMotion ? 0 : 700 });
+        if (d)
+          void sigma
+            .getCamera()
+            .animate(
+              { x: d.x, y: d.y, ratio: Math.min(sigma.getCamera().ratio, 0.4) },
+              { duration: reducedMotion ? 0 : 700 },
+            );
       } else if (!id) void sigma.getCamera().animatedReset({ duration: reducedMotion ? 0 : 600 });
     }, 60);
     return () => clearTimeout(t);
@@ -458,7 +512,9 @@ export function GraphExplorer() {
     else if (e.key === 'n' || e.key === 'p') {
       // Step through the neighbours of the selection (or all nodes) without a pointer.
       const ws = useWorkspace.getState();
-      const pool = ws.primaryId ? [...neighbourhood(ws.primaryId, view.edges).nodes] : view.nodes.map((n) => n.id);
+      const pool = ws.primaryId
+        ? [...neighbourhood(ws.primaryId, view.edges).nodes]
+        : view.nodes.map((n) => n.id);
       if (!pool.length) return;
       const i = pool.indexOf(ws.hoverId ?? ws.primaryId ?? '');
       ws.setHover(pool[(i + (e.key === 'n' ? 1 : -1) + pool.length) % pool.length]!);
@@ -473,7 +529,9 @@ export function GraphExplorer() {
     return (
       <div className="p-8">
         <p className="font-editorial text-[1.25rem]">The graph renderer could not start</p>
-        <p className="label mt-2">WebGL is not available in this browser ({failed}). The Mind Map and Search views work without it.</p>
+        <p className="label mt-2">
+          WebGL is not available in this browser ({failed}). The Mind Map and Search views work without it.
+        </p>
       </div>
     );
 
@@ -525,10 +583,14 @@ export function GraphExplorer() {
         data-testid="minimap"
         onClick={(e) => {
           const sigma = sigmaRef.current;
-          const c = minimap.current as (HTMLCanvasElement & { _unmap?: (px: number, py: number) => { x: number; y: number } }) | null;
+          const c = minimap.current as
+            (HTMLCanvasElement & { _unmap?: (px: number, py: number) => { x: number; y: number } }) | null;
           if (!sigma || !c?._unmap) return;
           const r = c.getBoundingClientRect();
-          const gp = c._unmap(((e.clientX - r.left) / r.width) * c.width, ((e.clientY - r.top) / r.height) * c.height);
+          const gp = c._unmap(
+            ((e.clientX - r.left) / r.width) * c.width,
+            ((e.clientY - r.top) / r.height) * c.height,
+          );
           const framed = sigma.viewportToFramedGraph(sigma.graphToViewport(gp));
           void sigma.getCamera().animate({ x: framed.x, y: framed.y }, { duration: reducedMotion ? 0 : 400 });
         }}

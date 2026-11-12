@@ -13,7 +13,9 @@ import { SettingsView } from './workspace/SettingsView';
 import { WorkspaceLayout } from './workspace/WorkspaceLayout';
 
 // The three renderers are loaded on demand: each pulls in a sizeable graphics library.
-const GraphExplorer = lazy(() => import('./workspace/GraphExplorer').then((m) => ({ default: m.GraphExplorer })));
+const GraphExplorer = lazy(() =>
+  import('./workspace/GraphExplorer').then((m) => ({ default: m.GraphExplorer })),
+);
 const Atlas = lazy(() => import('./workspace/Atlas').then((m) => ({ default: m.Atlas })));
 const MindMap = lazy(() => import('./workspace/MindMap').then((m) => ({ default: m.MindMap })));
 

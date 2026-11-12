@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "exports": { ".": "./src/index.ts" },
-  "dependencies": { "@vectora/graph-schema": "*" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@vectora/graph-schema": "*"
+  }
 }

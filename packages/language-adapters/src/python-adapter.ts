@@ -5,7 +5,13 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { assetPath } from './assets';
-import { type AnalyzeContext, type FileFacts, type LanguageAdapter, type SourceFileInput, emptyFacts } from './types';
+import {
+  type AnalyzeContext,
+  type FileFacts,
+  type LanguageAdapter,
+  type SourceFileInput,
+  emptyFacts,
+} from './types';
 
 const BATCH_SIZE = 200;
 let cachedCommand: { cmd: string; args: string[] } | null | undefined;
@@ -19,7 +25,11 @@ export function findPython(preferred?: string): { cmd: string; args: string[] } 
   candidates.push({ cmd: 'python3', args: [] }, { cmd: 'python', args: [] }, { cmd: 'py', args: ['-3'] });
   for (const c of candidates) {
     try {
-      const r = spawnSync(c.cmd, [...c.args, '-c', 'import sys; print(sys.version_info[0])'], { encoding: 'utf8', timeout: 10000, windowsHide: true });
+      const r = spawnSync(c.cmd, [...c.args, '-c', 'import sys; print(sys.version_info[0])'], {
+        encoding: 'utf8',
+        timeout: 10000,
+        windowsHide: true,
+      });
       if (r.status === 0 && r.stdout.trim() === '3') {
         if (!preferred) cachedCommand = c;
         return c;
@@ -32,10 +42,17 @@ export function findPython(preferred?: string): { cmd: string; args: string[] } 
   return null;
 }
 
-function runBatch(py: { cmd: string; args: string[] }, script: string, batch: SourceFileInput[]): Promise<Map<string, Partial<FileFacts>>> {
+function runBatch(
+  py: { cmd: string; args: string[] },
+  script: string,
+  batch: SourceFileInput[],
+): Promise<Map<string, Partial<FileFacts>>> {
   return new Promise((resolve, reject) => {
     // -I: isolated mode, so the interpreter does not pick up modules from the analysed repository.
-    const child = spawn(py.cmd, [...py.args, '-I', script], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const child = spawn(py.cmd, [...py.args, '-I', script], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
     const chunks: Buffer[] = [];
     let stderr = '';
     child.stdout.on('data', (d: Buffer) => chunks.push(d));
@@ -52,7 +69,8 @@ function runBatch(py: { cmd: string; args: string[] }, script: string, batch: So
           // ignore a malformed line; the file is reported as not analysed below
         }
       }
-      if (code !== 0 && out.size === 0) reject(new Error(`Python analysis exited with code ${code}: ${stderr.trim()}`));
+      if (code !== 0 && out.size === 0)
+        reject(new Error(`Python analysis exited with code ${code}: ${stderr.trim()}`));
       else resolve(out);
     });
     child.stdin.on('error', () => undefined);
@@ -72,7 +90,11 @@ export function createPythonAdapter(): LanguageAdapter {
       if (!py) {
         return files.map((f) => {
           const facts = emptyFacts(f, 'python');
-          facts.errors.push({ path: f.path, message: 'No Python 3 interpreter found; Python files were not analysed', severity: 'error' });
+          facts.errors.push({
+            path: f.path,
+            message: 'No Python 3 interpreter found; Python files were not analysed',
+            severity: 'error',
+          });
           return facts;
         });
       }

@@ -73,7 +73,13 @@ export function Dependencies() {
         .sort((a, b) => b.files - a.files || (a.node.name < b.node.name ? -1 : 1)),
     [graph, adj],
   );
-  const subsystemDeps = useMemo(() => graph.edges.filter((e) => e.type === 'DEPENDS_ON' && e.source.startsWith('sub:')).sort((a, b) => Number(b.metadata?.count ?? 0) - Number(a.metadata?.count ?? 0)), [graph]);
+  const subsystemDeps = useMemo(
+    () =>
+      graph.edges
+        .filter((e) => e.type === 'DEPENDS_ON' && e.source.startsWith('sub:'))
+        .sort((a, b) => Number(b.metadata?.count ?? 0) - Number(a.metadata?.count ?? 0)),
+    [graph],
+  );
   const cycles = useMemo(() => {
     const out = new Map<string, string[]>();
     const files = new Set<string>();
@@ -110,7 +116,12 @@ export function Dependencies() {
               key={id}
               role="tab"
               aria-selected={tab === id}
-              className={cx('cursor-pointer whitespace-nowrap border-0 border-b-2 bg-transparent px-0 pb-2 text-[0.875rem]', tab === id ? 'border-ink font-medium text-ink' : 'border-transparent text-ink-2 hover:text-ink')}
+              className={cx(
+                'cursor-pointer whitespace-nowrap border-0 border-b-2 bg-transparent px-0 pb-2 text-[0.875rem]',
+                tab === id
+                  ? 'border-ink font-medium text-ink'
+                  : 'border-transparent text-ink-2 hover:text-ink',
+              )}
               onClick={() => setTab(id)}
             >
               {label} <span className="meta">{count.toLocaleString()}</span>
@@ -121,10 +132,19 @@ export function Dependencies() {
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-10" role="tabpanel">
         {tab === 'packages' ? (
           packages.length === 0 ? (
-            <Empty title="No external packages">No manifest declares a dependency and no source file imports one.</Empty>
+            <Empty title="No external packages">
+              No manifest declares a dependency and no source file imports one.
+            </Empty>
           ) : (
             <div className="max-w-[980px]">
-              <input type="search" className="field mb-4 max-w-[320px]" placeholder="Filter packages" aria-label="Filter packages" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <input
+                type="search"
+                className="field mb-4 max-w-[320px]"
+                placeholder="Filter packages"
+                aria-label="Filter packages"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
               <table className="data-table">
                 <thead>
                   <tr>
@@ -142,7 +162,10 @@ export function Dependencies() {
                     .map((p) => (
                       <tr key={p.node.id}>
                         <td>
-                          <button className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.8125rem] text-ink hover:text-indigo" onClick={() => reveal(p.node.id)}>
+                          <button
+                            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.8125rem] text-ink hover:text-indigo"
+                            onClick={() => reveal(p.node.id)}
+                          >
                             {p.node.name}
                           </button>
                           {p.node.metadata.dev ? <span className="tag ml-2">dev</span> : null}
@@ -158,7 +181,16 @@ export function Dependencies() {
                         <td className="num">{p.files || <span className="text-ink-3">not imported</span>}</td>
                         <td className="text-right">
                           {p.files ? (
-                            <button className="btn btn-sm" onClick={() => showIn(`imports of ${p.node.name}`, [p.node.id, ...p.importers.map((e) => e.source)], p.importers.map((e) => e.id))}>
+                            <button
+                              className="btn btn-sm"
+                              onClick={() =>
+                                showIn(
+                                  `imports of ${p.node.name}`,
+                                  [p.node.id, ...p.importers.map((e) => e.source)],
+                                  p.importers.map((e) => e.id),
+                                )
+                              }
+                            >
                               Show in graph
                             </button>
                           ) : null}
@@ -173,18 +205,26 @@ export function Dependencies() {
 
         {tab === 'subsystems' ? (
           subsystemDeps.length === 0 ? (
-            <Empty title="No dependencies between subsystems">Either the repository has a single subsystem or no relationship crosses a subsystem boundary.</Empty>
+            <Empty title="No dependencies between subsystems">
+              Either the repository has a single subsystem or no relationship crosses a subsystem boundary.
+            </Empty>
           ) : (
             <ul className="m-0 max-w-[900px] list-none p-0">
               {subsystemDeps.map((e) => (
                 <li key={e.id} className="border-b border-line py-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-3">
                     <p>
-                      <button className="cursor-pointer border-0 bg-transparent p-0 font-medium text-ink hover:text-indigo" onClick={() => reveal(e.source)}>
+                      <button
+                        className="cursor-pointer border-0 bg-transparent p-0 font-medium text-ink hover:text-indigo"
+                        onClick={() => reveal(e.source)}
+                      >
                         {adj.nodes.get(e.source)?.name}
                       </button>{' '}
                       <span className="label">depends on</span>{' '}
-                      <button className="cursor-pointer border-0 bg-transparent p-0 font-medium text-ink hover:text-indigo" onClick={() => reveal(e.target)}>
+                      <button
+                        className="cursor-pointer border-0 bg-transparent p-0 font-medium text-ink hover:text-indigo"
+                        onClick={() => reveal(e.target)}
+                      >
                         {adj.nodes.get(e.target)?.name}
                       </button>
                     </p>
@@ -203,21 +243,39 @@ export function Dependencies() {
 
         {tab === 'cycles' ? (
           cycles.length === 0 ? (
-            <Empty title="No circular imports">No group of files imports itself through resolved import relationships.</Empty>
+            <Empty title="No circular imports">
+              No group of files imports itself through resolved import relationships.
+            </Empty>
           ) : (
             <ul className="m-0 max-w-[900px] list-none p-0">
               {cycles.map((c, i) => (
                 <li key={i} className="border-b border-line py-3">
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="font-medium">{c.length} files import each other</p>
-                    <button className="btn btn-sm" onClick={() => showIn(`import cycle of ${c.length} files`, c, graph.edges.filter((e) => e.type === 'IMPORTS' && c.includes(e.source) && c.includes(e.target)).map((e) => e.id))}>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() =>
+                        showIn(
+                          `import cycle of ${c.length} files`,
+                          c,
+                          graph.edges
+                            .filter(
+                              (e) => e.type === 'IMPORTS' && c.includes(e.source) && c.includes(e.target),
+                            )
+                            .map((e) => e.id),
+                        )
+                      }
+                    >
                       Show in graph
                     </button>
                   </div>
                   <ul className="m-0 mt-2 list-none p-0">
                     {c.slice(0, 12).map((id) => (
                       <li key={id}>
-                        <button className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.8125rem] text-ink-2 hover:text-indigo" onClick={() => reveal(id)}>
+                        <button
+                          className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.8125rem] text-ink-2 hover:text-indigo"
+                          onClick={() => reveal(id)}
+                        >
                           {adj.nodes.get(id)?.filePath}
                         </button>
                       </li>
@@ -232,16 +290,22 @@ export function Dependencies() {
 
         {tab === 'flows' ? (
           !analysis?.flows.length ? (
-            <Empty title="No execution flows">No API endpoint or entry point with resolved outgoing calls was found.</Empty>
+            <Empty title="No execution flows">
+              No API endpoint or entry point with resolved outgoing calls was found.
+            </Empty>
           ) : (
             <div className="max-w-[980px]">
-              <p className="label mb-4 max-w-[70ch]">Flows follow route and call relationships from an endpoint or entry point. They are derived from static structure; callbacks and runtime wiring are not included.</p>
+              <p className="label mb-4 max-w-[70ch]">
+                Flows follow route and call relationships from an endpoint or entry point. They are derived
+                from static structure; callbacks and runtime wiring are not included.
+              </p>
               <ul className="m-0 list-none p-0">
                 {analysis.flows.map((f) => (
                   <li key={f.id} className="border-b border-line py-3">
                     <div className="flex flex-wrap items-baseline justify-between gap-3">
                       <p className="font-mono text-[0.875rem]">
-                        {f.name} {f.reachesData ? <span className="tag ml-2">reaches data access</span> : null}
+                        {f.name}{' '}
+                        {f.reachesData ? <span className="tag ml-2">reaches data access</span> : null}
                       </p>
                       <button className="btn btn-sm" onClick={() => showIn(f.name, f.steps)}>
                         Show in graph
@@ -250,8 +314,15 @@ export function Dependencies() {
                     <ol className="m-0 mt-2 flex list-none flex-wrap items-center gap-x-2 gap-y-1 p-0">
                       {f.steps.map((s, i) => (
                         <li key={s} className="flex items-center gap-2">
-                          {i > 0 ? <span className="text-ink-3" aria-hidden="true">›</span> : null}
-                          <button className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.75rem] text-ink-2 hover:text-indigo" onClick={() => reveal(s)}>
+                          {i > 0 ? (
+                            <span className="text-ink-3" aria-hidden="true">
+                              ›
+                            </span>
+                          ) : null}
+                          <button
+                            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.75rem] text-ink-2 hover:text-indigo"
+                            onClick={() => reveal(s)}
+                          >
                             {adj.nodes.get(s)?.name ?? s}
                           </button>
                         </li>
@@ -266,18 +337,24 @@ export function Dependencies() {
 
         {tab === 'unresolved' ? (
           !analysis?.unresolvedCount ? (
-            <Empty title="Nothing unresolved">Every reference the analysers found was tied to a definition.</Empty>
+            <Empty title="Nothing unresolved">
+              Every reference the analysers found was tied to a definition.
+            </Empty>
           ) : (
             <div className="max-w-[980px]">
               <p className="label mb-4 max-w-[72ch]">
-                These references were found in the source but could not be tied to a definition with scope evidence. They are reported here and are not part of the graph.
+                These references were found in the source but could not be tied to a definition with scope
+                evidence. They are reported here and are not part of the graph.
               </p>
               <SectionHeading>By reason</SectionHeading>
               <ul className="m-0 mb-8 list-none p-0">
                 {Object.entries(analysis.unresolvedByReason)
                   .sort((a, b) => b[1] - a[1])
                   .map(([reason, count]) => (
-                    <li key={reason} className="flex items-baseline justify-between gap-4 border-b border-line py-1.5 text-[0.875rem]">
+                    <li
+                      key={reason}
+                      className="flex items-baseline justify-between gap-4 border-b border-line py-1.5 text-[0.875rem]"
+                    >
                       <span>{reason}</span>
                       <span className="meta">{count.toLocaleString()}</span>
                     </li>
@@ -297,9 +374,16 @@ export function Dependencies() {
                   {analysis.unresolvedSamples.slice(0, 300).map((u, i) => (
                     <tr key={i}>
                       <td className="font-mono text-[0.75rem]">{u.name}</td>
-                      <td className="meta">{EDGE_TYPE_LABELS[u.kind as keyof typeof EDGE_TYPE_LABELS] ?? u.kind}</td>
+                      <td className="meta">
+                        {EDGE_TYPE_LABELS[u.kind as keyof typeof EDGE_TYPE_LABELS] ?? u.kind}
+                      </td>
                       <td>
-                        <button className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.75rem] text-ink-2 hover:text-indigo" onClick={() => openView('source', `path=${encodeURIComponent(u.fromPath)}&line=${u.line}`)}>
+                        <button
+                          className="cursor-pointer border-0 bg-transparent p-0 font-mono text-[0.75rem] text-ink-2 hover:text-indigo"
+                          onClick={() =>
+                            openView('source', `path=${encodeURIComponent(u.fromPath)}&line=${u.line}`)
+                          }
+                        >
                           {u.fromPath}:{u.line}
                         </button>
                       </td>

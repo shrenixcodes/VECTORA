@@ -8,7 +8,8 @@ export function Overview() {
   const { data: o, isLoading, error } = useOverview(repo.id);
   const setFocus = useWorkspace((s) => s.setFocus);
   if (isLoading) return <Loading label="Reading analysis" />;
-  if (error || !o) return <Empty title="The overview could not be loaded">{(error as Error | null)?.message}</Empty>;
+  if (error || !o)
+    return <Empty title="The overview could not be loaded">{(error as Error | null)?.message}</Empty>;
 
   const show = (id: string, view: 'graph' | 'atlas' | 'mindmap' = settings.graph.defaultMode) => {
     reveal(id);
@@ -55,7 +56,9 @@ export function Overview() {
             ].map(([k, v]) => (
               <div key={k as string}>
                 <dt className="label">{k}</dt>
-                <dd className="m-0 font-mono text-[1.375rem] tabular-nums">{(v as number).toLocaleString()}</dd>
+                <dd className="m-0 font-mono text-[1.375rem] tabular-nums">
+                  {(v as number).toLocaleString()}
+                </dd>
               </div>
             ))}
           </dl>
@@ -66,7 +69,10 @@ export function Overview() {
             Graph checks: {o.validation.errors} errors, {o.validation.warnings} warnings.
           </p>
           {o.unresolved > 0 ? (
-            <p className="label mt-2">Unresolved references are listed in the Dependency Explorer. They are never drawn as relationships.</p>
+            <p className="label mt-2">
+              Unresolved references are listed in the Dependency Explorer. They are never drawn as
+              relationships.
+            </p>
           ) : null}
         </aside>
 
@@ -107,7 +113,8 @@ export function Overview() {
           </ul>
           {other.length ? (
             <p className="label mt-3">
-              Detected but not analysed at symbol level: {other.map((l) => `${l.language} (${l.files})`).join(', ')}.
+              Detected but not analysed at symbol level:{' '}
+              {other.map((l) => `${l.language} (${l.files})`).join(', ')}.
             </p>
           ) : null}
           {o.frameworks.length ? (
@@ -168,7 +175,9 @@ export function Overview() {
 
         <section className="lg:col-span-5 lg:col-start-8" aria-labelledby="ov-entry">
           <SectionHeading id="ov-entry">Main entry points</SectionHeading>
-          {o.entryPoints.length === 0 ? <p className="label">No entry point could be identified from manifests or file conventions.</p> : null}
+          {o.entryPoints.length === 0 ? (
+            <p className="label">No entry point could be identified from manifests or file conventions.</p>
+          ) : null}
           {o.entryPoints.map((e) => (
             <button key={e.nodeId} className="link-row" onClick={() => show(e.nodeId)}>
               <span className="min-w-0 flex-1">
@@ -183,7 +192,12 @@ export function Overview() {
                 <SectionHeading aside="derived from names and paths">Concepts</SectionHeading>
               </div>
               {o.concepts.map((c) => (
-                <button key={c.id} className="link-row" onClick={() => show(c.id, 'mindmap')} title={c.evidence.join('\n')}>
+                <button
+                  key={c.id}
+                  className="link-row"
+                  onClick={() => show(c.id, 'mindmap')}
+                  title={c.evidence.join('\n')}
+                >
                   <span className="flex-1">{c.name}</span>
                   <span className="meta">{c.members} files</span>
                 </button>
@@ -206,7 +220,11 @@ export function Overview() {
               {o.largestModules.map((m) => (
                 <tr key={m.id}>
                   <td className="max-w-0 w-full">
-                    <button className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-[0.8125rem] text-ink hover:text-indigo" onClick={() => show(m.id)} title={m.path}>
+                    <button
+                      className="block w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-[0.8125rem] text-ink hover:text-indigo"
+                      onClick={() => show(m.id)}
+                      title={m.path}
+                    >
                       {m.path}
                     </button>
                   </td>
@@ -237,7 +255,10 @@ export function Overview() {
               .filter((p) => p.importers > 0)
               .slice(0, 8)
               .map((p) => (
-                <li key={p.name} className="flex items-baseline justify-between gap-3 border-b border-line py-1.5 text-[0.8125rem]">
+                <li
+                  key={p.name}
+                  className="flex items-baseline justify-between gap-3 border-b border-line py-1.5 text-[0.8125rem]"
+                >
                   <span className="truncate font-mono">{p.name}</span>
                   <span className="meta shrink-0">
                     {p.importers} file{p.importers === 1 ? '' : 's'}

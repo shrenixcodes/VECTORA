@@ -105,25 +105,45 @@ export class SearchIndex {
       else if (e.name.startsWith(q)) score = 75 - Math.min(15, e.name.length - q.length);
       else if (e.name.includes(q)) score = 58 - Math.min(15, (e.name.length - q.length) / 2);
       else if (e.qualified.includes(q)) set(50, 'qualified');
-      else if (qTokens.length > 1 && qTokens.every((t) => e.tokens.some((et) => et.startsWith(t)))) score = 48;
+      else if (qTokens.length > 1 && qTokens.every((t) => e.tokens.some((et) => et.startsWith(t))))
+        score = 48;
       if (score < 60 && e.path) {
         // A path names a file: the file itself ranks above the symbols defined in it.
-        const fileLike = e.node.type === 'File' || e.node.type === 'Configuration' || e.node.type === 'Directory' || e.node.type === 'Module';
+        const fileLike =
+          e.node.type === 'File' ||
+          e.node.type === 'Configuration' ||
+          e.node.type === 'Directory' ||
+          e.node.type === 'Module';
         if (e.path === q) set(Math.max(score, fileLike ? 88 : 34), 'path');
         else if (pathLike && e.path.endsWith(q)) set(Math.max(score, fileLike ? 70 : 28), 'path');
         else if (e.path.includes(q) && score < 40) {
           // Path-only matches favour the file itself over its symbols.
-          score = e.node.type === 'File' || e.node.type === 'Configuration' || e.node.type === 'Directory' || e.node.type === 'Module' ? 40 : 18;
+          score =
+            e.node.type === 'File' ||
+            e.node.type === 'Configuration' ||
+            e.node.type === 'Directory' ||
+            e.node.type === 'Module'
+              ? 40
+              : 18;
           match = 'path';
         }
       }
       if (score === 0 && e.description && e.description.includes(q)) set(22, 'description');
-      if (score === 0 && qTokens.length && qTokens.every((t) => e.description.includes(t) || e.tokens.some((et) => et.startsWith(t)))) set(16, 'description');
-      if (score === 0 && q.length >= 3 && q.length <= 24 && !q.includes(' ') && subsequence(q, e.name)) set(10, 'fuzzy');
+      if (
+        score === 0 &&
+        qTokens.length &&
+        qTokens.every((t) => e.description.includes(t) || e.tokens.some((et) => et.startsWith(t)))
+      )
+        set(16, 'description');
+      if (score === 0 && q.length >= 3 && q.length <= 24 && !q.includes(' ') && subsequence(q, e.name))
+        set(10, 'fuzzy');
       if (score === 0) continue;
       hits.push({ node: e.node, score: score + (TYPE_WEIGHT[e.node.type] ?? 0), match });
     }
-    hits.sort((a, b) => b.score - a.score || a.node.name.length - b.node.name.length || (a.node.id < b.node.id ? -1 : 1));
+    hits.sort(
+      (a, b) =>
+        b.score - a.score || a.node.name.length - b.node.name.length || (a.node.id < b.node.id ? -1 : 1),
+    );
     return hits.slice(0, limit);
   }
 }
@@ -140,7 +160,11 @@ export interface DocumentHit {
 }
 
 /** Plain-text search inside documentation files. */
-export function searchDocuments(docs: { path: string; content: string }[], query: string, limit = 20): DocumentHit[] {
+export function searchDocuments(
+  docs: { path: string; content: string }[],
+  query: string,
+  limit = 20,
+): DocumentHit[] {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
   const hits: DocumentHit[] = [];
@@ -154,7 +178,12 @@ export function searchDocuments(docs: { path: string; content: string }[], query
       if (h) heading = h[1]!.trim();
       if (line.toLowerCase().includes(q)) {
         const text = line.trim();
-        hits.push({ path: d.path, line: i + 1, snippet: text.length > 200 ? `${text.slice(0, 197)}...` : text, heading });
+        hits.push({
+          path: d.path,
+          line: i + 1,
+          snippet: text.length > 200 ? `${text.slice(0, 197)}...` : text,
+          heading,
+        });
         perDoc++;
       }
     }

@@ -65,7 +65,8 @@ export const DARK: Palette = {
 export const paletteFor = (theme: 'light' | 'dark'): Palette => (theme === 'dark' ? DARK : LIGHT);
 
 /** Visual family of a node type. Colour is always paired with shape (3D), size and a text label. */
-export type NodeFamily = 'structure' | 'file' | 'type' | 'callable' | 'data' | 'endpoint' | 'concept' | 'external' | 'value';
+export type NodeFamily =
+  'structure' | 'file' | 'type' | 'callable' | 'data' | 'endpoint' | 'concept' | 'external' | 'value';
 
 export const NODE_FAMILY: Record<NodeType, NodeFamily> = {
   Repository: 'structure',

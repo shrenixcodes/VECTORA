@@ -36,7 +36,13 @@ export function CommandPalette() {
   useEffect(() => {
     if (!open) setInput('');
   }, [open]);
-  const { data, isFetching } = useQuery({ queryKey: ['search', repo.id, query], queryFn: () => api.search(repo.id, query), enabled: open && query.length >= 2, staleTime: 30_000, placeholderData: (p) => p });
+  const { data, isFetching } = useQuery({
+    queryKey: ['search', repo.id, query],
+    queryFn: () => api.search(repo.id, query),
+    enabled: open && query.length >= 2,
+    staleTime: 30_000,
+    placeholderData: (p) => p,
+  });
 
   const current = location.pathname.split('/')[3] ?? 'overview';
   const openNode = (id: string) => {
@@ -50,12 +56,28 @@ export function CommandPalette() {
   const views = VIEWS.filter((v) => !query || v.label.toLowerCase().includes(query.toLowerCase()));
   // Results arrive after typing, so the highlighted item is set explicitly: the first result is
   // always the one Enter opens.
-  const first = results[0]?.id ?? (documents[0] ? `doc:${documents[0].path}:${documents[0].line}` : views[0] ? `view:${views[0].view}` : '');
+  const first =
+    results[0]?.id ??
+    (documents[0]
+      ? `doc:${documents[0].path}:${documents[0].line}`
+      : views[0]
+        ? `view:${views[0].view}`
+        : '');
   const [selected, setSelected] = useState('');
   useEffect(() => setSelected(first), [first]);
 
   return (
-    <Command.Dialog open={open} onOpenChange={setOpen} label="Search the repository" shouldFilter={false} value={selected} onValueChange={setSelected} overlayClassName="overlay" contentClassName="dialog" loop>
+    <Command.Dialog
+      open={open}
+      onOpenChange={setOpen}
+      label="Search the repository"
+      shouldFilter={false}
+      value={selected}
+      onValueChange={setSelected}
+      overlayClassName="overlay"
+      contentClassName="dialog"
+      loop
+    >
       <div className="flex items-center gap-3 border-b border-line px-5">
         <Command.Input
           value={input}
@@ -67,11 +89,24 @@ export function CommandPalette() {
         <kbd className="meta shrink-0">Esc</kbd>
       </div>
       <Command.List className="max-h-[56vh] overflow-y-auto py-2" aria-busy={isFetching}>
-        {query.length >= 2 && !isFetching ? <Command.Empty className="label px-5 py-6">Nothing in this repository matches “{query}”. Try a file path or part of a symbol name.</Command.Empty> : null}
+        {query.length >= 2 && !isFetching ? (
+          <Command.Empty className="label px-5 py-6">
+            Nothing in this repository matches “{query}”. Try a file path or part of a symbol name.
+          </Command.Empty>
+        ) : null}
         {results.length ? (
-          <Command.Group heading="Graph" className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5">
+          <Command.Group
+            heading="Graph"
+            className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5"
+          >
             {results.map((r) => (
-              <Command.Item key={r.id} value={r.id} onSelect={() => openNode(r.id)} className={itemClass} data-testid="palette-result">
+              <Command.Item
+                key={r.id}
+                value={r.id}
+                onSelect={() => openNode(r.id)}
+                className={itemClass}
+                data-testid="palette-result"
+              >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-[0.8125rem]">{r.name}</span>
                   {r.filePath ? (
@@ -89,7 +124,10 @@ export function CommandPalette() {
           </Command.Group>
         ) : null}
         {documents.length ? (
-          <Command.Group heading="Documentation" className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5">
+          <Command.Group
+            heading="Documentation"
+            className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5"
+          >
             {documents.map((d) => (
               <Command.Item
                 key={`${d.path}:${d.line}`}
@@ -112,7 +150,10 @@ export function CommandPalette() {
           </Command.Group>
         ) : null}
         {views.length ? (
-          <Command.Group heading="Go to" className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5">
+          <Command.Group
+            heading="Go to"
+            className="[&_[cmdk-group-heading]]:meta [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:py-1.5"
+          >
             {views.map((v) => (
               <Command.Item
                 key={v.view}
@@ -129,7 +170,9 @@ export function CommandPalette() {
           </Command.Group>
         ) : null}
       </Command.List>
-      <p className="meta border-t border-line px-5 py-2">Enter opens the selected result. Arrow keys move through the list.</p>
+      <p className="meta border-t border-line px-5 py-2">
+        Enter opens the selected result. Arrow keys move through the list.
+      </p>
     </Command.Dialog>
   );
 }

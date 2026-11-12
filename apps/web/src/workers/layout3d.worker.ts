@@ -16,5 +16,8 @@ export interface Layout3DResponse {
 self.onmessage = (e: MessageEvent<Layout3DRequest>) => {
   const { requestId, nodes, edges, quality } = e.data;
   const result = layout3d(nodes, edges, { quality });
-  (self as unknown as Worker).postMessage({ requestId, positions: result.positions, radius: result.radius } satisfies Layout3DResponse, [result.positions.buffer]);
+  (self as unknown as Worker).postMessage(
+    { requestId, positions: result.positions, radius: result.radius } satisfies Layout3DResponse,
+    [result.positions.buffer],
+  );
 };

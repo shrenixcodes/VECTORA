@@ -35,11 +35,22 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
         : {
             level: config.logLevel,
             // Request bodies are never logged; headers that can carry secrets are removed.
-            redact: { paths: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-api-key"]'], remove: true },
+            redact: {
+              paths: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-api-key"]'],
+              remove: true,
+            },
             serializers: {
-              req: (req) => ({ method: req.method, url: redactSecrets(req.url.split('?')[0] ?? ''), id: req.id }),
+              req: (req) => ({
+                method: req.method,
+                url: redactSecrets(req.url.split('?')[0] ?? ''),
+                id: req.id,
+              }),
               // Stack traces are kept out of release logs.
-              err: (err: Error) => ({ type: err.name, message: redactSecrets(err.message), stack: config.production ? '' : redactSecrets(err.stack ?? '') }),
+              err: (err: Error) => ({
+                type: err.name,
+                message: redactSecrets(err.message),
+                stack: config.production ? '' : redactSecrets(err.stack ?? ''),
+              }),
             },
           },
   });
@@ -61,7 +72,8 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
   app.addHook('onRequest', async (req, reply) => {
     // DNS-rebinding protection: the Host header must name the loopback interface.
     const host = hostName(req.headers.host);
-    if (!LOOPBACK_HOSTS.has(host) && host !== config.host) return reply.code(403).send({ error: 'Forbidden host' });
+    if (!LOOPBACK_HOSTS.has(host) && host !== config.host)
+      return reply.code(403).send({ error: 'Forbidden host' });
     // Cross-site request protection: browsers send Origin on cross-origin and state-changing requests.
     const origin = req.headers.origin;
     if (origin) {
@@ -71,9 +83,16 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
       } catch {
         return reply.code(403).send({ error: 'Forbidden origin' });
       }
-      if (originHost !== req.headers.host && !allowedOrigins.has(origin)) return reply.code(403).send({ error: 'Forbidden origin' });
+      if (originHost !== req.headers.host && !allowedOrigins.has(origin))
+        return reply.code(403).send({ error: 'Forbidden origin' });
     }
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS' && req.headers['sec-fetch-site'] === 'cross-site') return reply.code(403).send({ error: 'Forbidden origin' });
+    if (
+      req.method !== 'GET' &&
+      req.method !== 'HEAD' &&
+      req.method !== 'OPTIONS' &&
+      req.headers['sec-fetch-site'] === 'cross-site'
+    )
+      return reply.code(403).send({ error: 'Forbidden origin' });
   });
   app.addHook('onSend', async (_req, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
@@ -87,9 +106,17 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number; validation?: unknown }, req, reply) => {
-    if (err instanceof EngineError || err instanceof GitHubError) return reply.code(err.status).send({ error: err.message });
-    if (err instanceof z.ZodError) return reply.code(400).send({ error: 'Invalid request', details: err.issues.map((i) => `${i.path.join('.')}: ${i.message}`) });
-    if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ error: err.message });
+    if (err instanceof EngineError || err instanceof GitHubError)
+      return reply.code(err.status).send({ error: err.message });
+    if (err instanceof z.ZodError)
+      return reply
+        .code(400)
+        .send({
+          error: 'Invalid request',
+          details: err.issues.map((i) => `${i.path.join('.')}: ${i.message}`),
+        });
+    if (err.statusCode && err.statusCode < 500)
+      return reply.code(err.statusCode).send({ error: err.message });
     req.log.error({ err }, 'request failed');
     return reply.code(500).send({ error: 'Internal error' });
   });
@@ -103,7 +130,12 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
     node: process.version,
     python: !!findPython(process.env.VECTORA_PYTHON),
     sampleAvailable: !!config.sampleDir,
-    languages: SUPPORTED_LANGUAGES.map((l) => ({ id: l.id, name: l.name, tier: l.tier, extensions: l.extensions })),
+    languages: SUPPORTED_LANGUAGES.map((l) => ({
+      id: l.id,
+      name: l.name,
+      tier: l.tier,
+      extensions: l.extensions,
+    })),
   }));
 
   // ---- repositories -------------------------------------------------------
@@ -120,11 +152,15 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
 
   // ---- imports ------------------------------------------------------------
   app.post('/api/import/local', async (req) => {
-    const body = z.object({ path: z.string().min(1).max(1024), name: z.string().max(120).optional() }).parse(req.body);
+    const body = z
+      .object({ path: z.string().min(1).max(1024), name: z.string().max(120).optional() })
+      .parse(req.body);
     return engine.importLocal(body.path, body.name);
   });
   app.post('/api/import/sample', async () => engine.importSample());
-  app.get('/api/fs/list', async (req) => engine.listDirectory(z.object({ path: z.string().max(1024).optional() }).parse(req.query).path));
+  app.get('/api/fs/list', async (req) =>
+    engine.listDirectory(z.object({ path: z.string().max(1024).optional() }).parse(req.query).path),
+  );
 
   app.post('/api/import/zip/inspect', async (req) => {
     const part = await req.file();
@@ -138,7 +174,13 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
     return engine.registerUpload(id, file, part.filename ?? 'archive.zip');
   });
   app.post('/api/import/zip', async (req) => {
-    const body = z.object({ uploadId: z.string().uuid(), root: z.string().max(512).optional(), name: z.string().max(120).optional() }).parse(req.body);
+    const body = z
+      .object({
+        uploadId: z.string().uuid(),
+        root: z.string().max(512).optional(),
+        name: z.string().max(120).optional(),
+      })
+      .parse(req.body);
     return engine.importZip(body.uploadId, body.root, body.name);
   });
 
@@ -171,12 +213,24 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
   app.get('/api/repositories/:id/overview', async (req) => engine.getOverview(idParams.parse(req.params).id));
   app.get('/api/repositories/:id/analysis', async (req) => engine.getAnalysis(idParams.parse(req.params).id));
   app.get('/api/repositories/:id/source', async (req) => {
-    const q = z.object({ path: z.string().min(1).max(1024), start: z.coerce.number().int().min(1).optional(), end: z.coerce.number().int().min(1).optional() }).parse(req.query);
+    const q = z
+      .object({
+        path: z.string().min(1).max(1024),
+        start: z.coerce.number().int().min(1).optional(),
+        end: z.coerce.number().int().min(1).optional(),
+      })
+      .parse(req.query);
     return engine.getSource(idParams.parse(req.params).id, q.path, q.start, q.end);
   });
   app.get('/api/repositories/:id/docs', async (req) => engine.listDocs(idParams.parse(req.params).id));
   app.get('/api/repositories/:id/search', async (req) => {
-    const q = z.object({ q: z.string().max(200), types: z.string().max(400).optional(), limit: z.coerce.number().int().min(1).max(100).optional() }).parse(req.query);
+    const q = z
+      .object({
+        q: z.string().max(200),
+        types: z.string().max(400).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+      })
+      .parse(req.query);
     const types = q.types?.split(',').filter((t) => (NODE_TYPES as readonly string[]).includes(t));
     return engine.search(idParams.parse(req.params).id, q.q, types?.length ? types : undefined, q.limit);
   });
@@ -185,7 +239,9 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
     return engine.ask(idParams.parse(req.params).id, body.question);
   });
   app.get('/api/repositories/:id/export/:format', async (req, reply) => {
-    const p = z.object({ id: z.string().uuid(), format: z.enum(['json', 'graphml', 'markdown', 'architecture']) }).parse(req.params);
+    const p = z
+      .object({ id: z.string().uuid(), format: z.enum(['json', 'graphml', 'markdown', 'architecture']) })
+      .parse(req.params);
     const q = z.object({ includeSource: z.enum(['true', 'false']).optional() }).parse(req.query);
     const out = engine.export(p.id, p.format, q.includeSource === 'true');
     return reply
@@ -205,7 +261,10 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
     layouts: z.record(z.string(), z.unknown()),
     savedAt: z.string().optional(),
   });
-  app.get('/api/repositories/:id/session', async (req) => engine.getSession(idParams.parse(req.params).id) ?? null);
+  app.get(
+    '/api/repositories/:id/session',
+    async (req) => engine.getSession(idParams.parse(req.params).id) ?? null,
+  );
   app.put('/api/repositories/:id/session', { bodyLimit: 16 * 1024 * 1024 }, async (req, reply) => {
     engine.saveSession(idParams.parse(req.params).id, sessionBody.parse(req.body) as unknown as SessionState);
     return reply.code(204).send();
@@ -217,7 +276,10 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
   app.get('/api/credentials', async () => engine.listCredentials());
   const credParams = z.object({ name: z.enum(['github', 'exploration-provider']) });
   app.put('/api/credentials/:name', async (req, reply) => {
-    engine.setCredential(credParams.parse(req.params).name, z.object({ value: z.string().min(1).max(4096) }).parse(req.body).value);
+    engine.setCredential(
+      credParams.parse(req.params).name,
+      z.object({ value: z.string().min(1).max(4096) }).parse(req.body).value,
+    );
     return reply.code(204).send();
   });
   app.delete('/api/credentials/:name', async (req, reply) => {
@@ -236,14 +298,27 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
 
   // ---- web application ----------------------------------------------------
   if (config.webDist) {
-    await app.register(fastifyStatic, { root: config.webDist, wildcard: true, index: false, maxAge: '1h', immutable: false });
+    await app.register(fastifyStatic, {
+      root: config.webDist,
+      wildcard: true,
+      index: false,
+      maxAge: '1h',
+      immutable: false,
+    });
     // The application shell must never be cached: it points at content-hashed assets that change with every build.
-    const shell = (reply: FastifyReply) => reply.sendFile('index.html', { cacheControl: false }).header('Cache-Control', 'no-cache');
+    const shell = (reply: FastifyReply) =>
+      reply.sendFile('index.html', { cacheControl: false }).header('Cache-Control', 'no-cache');
     app.get('/', (_req, reply) => shell(reply));
     app.setNotFoundHandler((req, reply) => {
       // Client-side routes fall back to the application shell; missing assets and API paths are real 404s.
       const path = req.url.split('?')[0] ?? '';
-      if (req.method === 'GET' && !path.startsWith('/api/') && !path.startsWith('/assets/') && !/\.[a-z0-9]{2,5}$/i.test(path)) return shell(reply);
+      if (
+        req.method === 'GET' &&
+        !path.startsWith('/api/') &&
+        !path.startsWith('/assets/') &&
+        !/\.[a-z0-9]{2,5}$/i.test(path)
+      )
+        return shell(reply);
       return reply.code(404).send({ error: 'Not found' });
     });
   } else {

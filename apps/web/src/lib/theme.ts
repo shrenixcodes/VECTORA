@@ -18,7 +18,9 @@ export type ThemeSetting = 'light' | 'dark' | 'system';
 /** Resolves the theme setting against the system preference and applies it to the document. */
 export function useTheme(setting: ThemeSetting | undefined): 'light' | 'dark' {
   const systemDark = useSyncExternalStore(darkMedia.subscribe, darkMedia.get, () => false);
-  const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem('vectora-theme') : null) as ThemeSetting | null;
+  const stored = (
+    typeof localStorage !== 'undefined' ? localStorage.getItem('vectora-theme') : null
+  ) as ThemeSetting | null;
   const effective = setting ?? stored ?? 'system';
   const theme = effective === 'system' ? (systemDark ? 'dark' : 'light') : effective;
   useEffect(() => {
@@ -32,7 +34,8 @@ export function useTheme(setting: ThemeSetting | undefined): 'light' | 'dark' {
 export function useReducedMotion(settings: Settings | null): boolean {
   const system = useSyncExternalStore(motionMedia.subscribe, motionMedia.get, () => false);
   const pref = settings?.performance.reducedMotion ?? 'system';
-  const reduced = pref === 'on' || settings?.graph.animationIntensity === 'none' || (pref === 'system' && system);
+  const reduced =
+    pref === 'on' || settings?.graph.animationIntensity === 'none' || (pref === 'system' && system);
   useEffect(() => {
     const el = document.documentElement;
     if (pref === 'on' || settings?.graph.animationIntensity === 'none') el.dataset.motion = 'reduced';
