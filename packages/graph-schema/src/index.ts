@@ -347,7 +347,7 @@ export function computeStats(nodes: GraphNode[], edges: GraphEdge[], unresolvedC
   for (const n of nodes) {
     nodesByType[n.type] = (nodesByType[n.type] ?? 0) + 1;
     if (isSymbolType(n.type)) symbolCount++;
-    if (n.type === 'File') fileCount++;
+    if (n.type === 'File' || n.type === 'Configuration') fileCount++;
   }
   let verifiedEdges = 0;
   for (const e of edges) {

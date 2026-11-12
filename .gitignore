@@ -13,3 +13,4 @@ Thumbs.db
 *.tsbuildinfo
 .bench-tmp/
 .npm-cache/
+.claude/

@@ -8,7 +8,7 @@ import { pipeline } from 'node:stream/promises';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { NODE_TYPES } from '@vectora/graph-schema';
 import { SUPPORTED_LANGUAGES, findPython } from '@vectora/language-adapters';
@@ -236,9 +236,14 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
 
   // ---- web application ----------------------------------------------------
   if (config.webDist) {
-    await app.register(fastifyStatic, { root: config.webDist, wildcard: false, maxAge: '1h', immutable: false });
+    await app.register(fastifyStatic, { root: config.webDist, wildcard: true, index: false, maxAge: '1h', immutable: false });
+    // The application shell must never be cached: it points at content-hashed assets that change with every build.
+    const shell = (reply: FastifyReply) => reply.sendFile('index.html', { cacheControl: false }).header('Cache-Control', 'no-cache');
+    app.get('/', (_req, reply) => shell(reply));
     app.setNotFoundHandler((req, reply) => {
-      if (req.method === 'GET' && !req.url.startsWith('/api/')) return reply.header('Cache-Control', 'no-cache').sendFile('index.html');
+      // Client-side routes fall back to the application shell; missing assets and API paths are real 404s.
+      const path = req.url.split('?')[0] ?? '';
+      if (req.method === 'GET' && !path.startsWith('/api/') && !path.startsWith('/assets/') && !/\.[a-z0-9]{2,5}$/i.test(path)) return shell(reply);
       return reply.code(404).send({ error: 'Not found' });
     });
   } else {

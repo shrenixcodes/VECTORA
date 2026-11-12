@@ -46,7 +46,7 @@
     "react-dom": "^19.3.1",
     "react-markdown": "^10.0.0",
     "react-router": "^8.5.1",
-    "sigma": "^4.0.6",
+    "sigma": "^3.0.3",
     "three": "^0.187.0",
     "zustand": "^5.1.0"
   },
