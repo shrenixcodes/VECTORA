@@ -66,8 +66,6 @@ const pretty = (s: string): string =>
     .replace(/\b\w/g, (c) => c.toUpperCase())
     .trim();
 
-const dirOf = (p: string): string => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '');
-
 /** Chooses the directory prefixes that act as subsystems. */
 export function chooseSubsystemRoots(filePaths: string[], manifests: ManifestInfo): { key: string; name: string; dir: string }[] {
   const code = filePaths;

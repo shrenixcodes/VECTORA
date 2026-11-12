@@ -63,7 +63,9 @@ describe('local engine', () => {
   const call = async (method: string, url: string, payload?: unknown, headers: Record<string, string> = {}) => {
     const res = await app.inject({ method: method as 'GET', url, payload: payload as object, headers: { ...HOST, ...headers } });
     const type = String(res.headers['content-type'] ?? '');
-    return { status: res.statusCode, body: (type.includes('json') ? res.json() : res.body) as never as Record<string, never> & string, headers: res.headers };
+    // Response bodies are loosely typed on purpose: each test asserts the shape it needs.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { status: res.statusCode, body: (type.includes('json') ? res.json() : res.body) as any, headers: res.headers };
   };
   const waitFor = async (jobId: string) => {
     await engine.idle();

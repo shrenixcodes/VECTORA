@@ -16,7 +16,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:engine": "npm run dev -w @vectora/local-engine",
     "dev:web": "npm run dev -w @vectora/web",
-    "build": "npm run build -w @vectora/web && node scripts/build-engine.mjs",
+    "build": "node scripts/build.mjs",
     "start": "node dist/engine/server.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",

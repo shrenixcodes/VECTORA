@@ -100,6 +100,7 @@ export function unsafeEntryReason(name: string): string | null {
   if (n.startsWith('/') || /^[a-zA-Z]:/.test(n)) return 'absolute path';
   const parts = n.split('/').filter((p) => p !== '');
   if (parts.some((p) => p === '..')) return 'parent directory traversal';
+  // eslint-disable-next-line no-control-regex
   if (parts.some((p) => /[<>:"|?*\u0000-\u001f]/.test(p))) return 'characters not allowed in file names';
   if (parts.some((p) => /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(p))) return 'reserved device name';
   if (parts.some((p) => p.length > 255) || n.length > 1024) return 'name too long';

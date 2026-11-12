@@ -64,6 +64,28 @@
   --duration-panel: 0ms;
 }
 
+/* Reduced motion. Kept outside the cascade layers so it overrides the token values above. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) {
+    --duration-ui: 0ms;
+    --duration-panel: 0ms;
+  }
+  :root:not([data-motion='full']) *,
+  :root:not([data-motion='full']) *::before,
+  :root:not([data-motion='full']) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0ms !important;
+}
+
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -152,26 +174,6 @@
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--line) transparent;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    :root:not([data-motion='full']) {
-      --duration-ui: 0ms;
-      --duration-panel: 0ms;
-    }
-    :root:not([data-motion='full']) *,
-    :root:not([data-motion='full']) *::before,
-    :root:not([data-motion='full']) *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      scroll-behavior: auto !important;
-    }
-  }
-  :root[data-motion='reduced'] *,
-  :root[data-motion='reduced'] *::before,
-  :root[data-motion='reduced'] *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0ms !important;
   }
 }
 

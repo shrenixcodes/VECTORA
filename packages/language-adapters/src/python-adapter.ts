@@ -85,7 +85,6 @@ export function createPythonAdapter(): LanguageAdapter {
         try {
           parsed = await runBatch(py, script, batch);
         } catch (err) {
-          parsed = new Map();
           for (const f of batch) {
             const facts = emptyFacts(f, 'python');
             facts.errors.push({ path: f.path, message: (err as Error).message, severity: 'error' });

@@ -65,7 +65,7 @@ export async function buildServer(config: EngineConfig): Promise<{ app: FastifyI
     // Cross-site request protection: browsers send Origin on cross-origin and state-changing requests.
     const origin = req.headers.origin;
     if (origin) {
-      let originHost = '';
+      let originHost: string;
       try {
         originHost = new URL(origin).host;
       } catch {

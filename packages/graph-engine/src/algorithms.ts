@@ -206,7 +206,11 @@ export function impactOf(index: GraphIndex, id: string, maxDepth = 5, maxNodes =
   for (const s of seeds) {
     const r = traverse(index, s, 'in', { maxDepth, maxNodes });
     for (const [k, v] of r.distances) if (!merged.distances.has(k) || merged.distances.get(k)! > v) merged.distances.set(k, v);
-    for (const e of r.edges) if (!edgeSeen.has(e.id)) (edgeSeen.add(e.id), merged.edges.push(e));
+    for (const e of r.edges) {
+      if (edgeSeen.has(e.id)) continue;
+      edgeSeen.add(e.id);
+      merged.edges.push(e);
+    }
     merged.truncated ||= r.truncated;
   }
   return merged;

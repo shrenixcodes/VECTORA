@@ -26,7 +26,7 @@ export function Landing() {
       {/* Hero — text held to a narrow left column, the drawing bleeding off the right edge */}
       <section className="relative mx-auto grid max-w-[1320px] gap-y-10 px-6 pb-8 pt-10 md:grid-cols-12 md:px-12 md:pt-20" aria-labelledby="hero-title">
         <p className="spine absolute left-[18px] top-24 hidden xl:block" aria-hidden="true">
-          VECTORA　構造を読む
+          {'VECTORA　構造を読む'}
         </p>
         <div className="md:col-span-5 md:pt-10 xl:col-start-2 xl:col-span-4">
           <h1 id="hero-title" className="font-editorial text-(length:--text-display) leading-[1.08]">

@@ -48,9 +48,14 @@ export function CommandPalette() {
   const results = query.length >= 2 ? (data?.results ?? []) : [];
   const documents = query.length >= 2 ? (data?.documents ?? []) : [];
   const views = VIEWS.filter((v) => !query || v.label.toLowerCase().includes(query.toLowerCase()));
+  // Results arrive after typing, so the highlighted item is set explicitly: the first result is
+  // always the one Enter opens.
+  const first = results[0]?.id ?? (documents[0] ? `doc:${documents[0].path}:${documents[0].line}` : views[0] ? `view:${views[0].view}` : '');
+  const [selected, setSelected] = useState('');
+  useEffect(() => setSelected(first), [first]);
 
   return (
-    <Command.Dialog open={open} onOpenChange={setOpen} label="Search the repository" shouldFilter={false} overlayClassName="overlay" contentClassName="dialog" loop>
+    <Command.Dialog open={open} onOpenChange={setOpen} label="Search the repository" shouldFilter={false} value={selected} onValueChange={setSelected} overlayClassName="overlay" contentClassName="dialog" loop>
       <div className="flex items-center gap-3 border-b border-line px-5">
         <Command.Input
           value={input}

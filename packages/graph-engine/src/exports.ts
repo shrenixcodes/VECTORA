@@ -197,7 +197,10 @@ export function exportArchitectureDoc(overview: RepositoryOverview, graph: Knowl
     L.push('## Subsystem dependency diagram', '', '```mermaid', 'graph LR');
     const mid = (id: string) => `n${[...idx.nodes.keys()].indexOf(id)}`;
     const ids = new Set<string>();
-    for (const d of deps) (ids.add(d.source), ids.add(d.target));
+    for (const d of deps) {
+      ids.add(d.source);
+      ids.add(d.target);
+    }
     for (const id of ids) L.push(`  ${mid(id)}["${name(id).replace(/"/g, "'")}"]`);
     for (const d of deps) L.push(`  ${mid(d.source)} -->|${d.metadata?.count ?? ''}| ${mid(d.target)}`);
     L.push('```', '');

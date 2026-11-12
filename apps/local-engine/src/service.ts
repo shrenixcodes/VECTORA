@@ -430,14 +430,14 @@ export class Engine {
       for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZAB') if (fs.existsSync(`${letter}:\\`)) roots.push(`${letter}:\\`);
     } else roots.push('/');
     const start = dir?.trim() ? path.resolve(dir) : this.config.installRoot;
-    let entries: { name: string; path: string; repository: boolean }[] = [];
+    let entries: { name: string; path: string; repository: boolean }[];
     try {
       entries = fs
         .readdirSync(start, { withFileTypes: true })
         .filter((d) => d.isDirectory() && !d.name.startsWith('$') && d.name !== 'System Volume Information')
         .map((d) => {
           const p = path.join(start, d.name);
-          let repository = false;
+          let repository: boolean;
           try {
             repository = ['.git', 'package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'pom.xml'].some((m) => fs.existsSync(path.join(p, m)));
           } catch {

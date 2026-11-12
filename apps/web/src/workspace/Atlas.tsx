@@ -200,7 +200,8 @@ function AtlasScene({ nodes, edges, positions, radius, palette, quality, labelBu
       for (const e of list) {
         const a = nodes[indexOf.get(e.source)!]!;
         const b = nodes[indexOf.get(e.target)!]!;
-        (isSymbolType(a.type) && isSymbolType(b.type) && a.filePath === b.filePath) || e.type === 'CONTAINS' ? fine.push(e) : coarse.push(e);
+        if ((isSymbolType(a.type) && isSymbolType(b.type) && a.filePath === b.filePath) || e.type === 'CONTAINS') fine.push(e);
+        else coarse.push(e);
       }
       const ordered = [...coarse, ...fine];
       const geometry = new THREE.BufferGeometry();
@@ -474,6 +475,20 @@ export function Atlas() {
   const layout = useLayout3d(view.nodes, view.edges, parentOf, quality);
   const current = layout && layout.ids.length === view.nodes.length && layout.ids[0] === view.nodes[0]?.id && layout.ids[layout.ids.length - 1] === view.nodes[view.nodes.length - 1]?.id ? layout : null;
 
+  // The scene keeps showing the previous arrangement until the next one is ready, so changing a
+  // filter or entering focus mode never blanks the view or tears down the renderer.
+  const [shown, setShown] = useState<{ nodes: GraphNode[]; edges: GraphEdge[]; positions: Float32Array; radius: number } | null>(null);
+  useEffect(() => {
+    if (current) setShown({ nodes: view.nodes, edges: view.edges, positions: current.positions, radius: current.radius });
+  }, [current]); // eslint-disable-line react-hooks/exhaustive-deps
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
   const onExpand = useCallback(
     (id: string) => {
       const n = adj.nodes.get(id);
@@ -575,17 +590,20 @@ export function Atlas() {
           PNG
         </button>
       </ViewToolbar>
-      {current ? (
+      {shown ? (
         <Canvas
           key={attempt}
           frameloop="demand"
           dpr={quality === 'low' ? 1 : quality === 'high' ? [1, 2] : [1, 1.5]}
-          camera={{ fov: 42, near: 0.5, far: 6000, position: [0, current.radius * 1.25, current.radius * 3.3] }}
+          camera={{ fov: 42, near: 0.5, far: 6000, position: [0, shown.radius * 1.25, shown.radius * 3.3] }}
           gl={{ antialias: quality !== 'low', powerPreference: 'default', alpha: false }}
           onCreated={({ gl: renderer }) => {
-            renderer.domElement.addEventListener('webglcontextlost', (e) => {
+            const canvas = renderer.domElement;
+            canvas.addEventListener('webglcontextlost', (e) => {
               e.preventDefault();
-              setGl('lost');
+              // Disposing the renderer on the way out also reports a lost context; only a loss
+              // while the view is on screen is a real one.
+              if (alive.current && canvas.isConnected) setGl('lost');
             });
           }}
           onPointerMissed={(e) => {
@@ -595,14 +613,14 @@ export function Atlas() {
           role="application"
         >
           <color attach="background" args={[palette.canvas]} key={theme} />
-          <fog attach="fog" args={[palette.canvas, current.radius * 2.4, current.radius * 9]} />
+          <fog attach="fog" args={[palette.canvas, shown.radius * 2.4, shown.radius * 9]} />
           <ambientLight intensity={theme === 'dark' ? 1.5 : 2.1} />
-          <directionalLight position={[current.radius, current.radius * 2, current.radius]} intensity={theme === 'dark' ? 1.4 : 1.1} />
+          <directionalLight position={[shown.radius, shown.radius * 2, shown.radius]} intensity={theme === 'dark' ? 1.4 : 1.1} />
           <AtlasScene
-            nodes={view.nodes}
-            edges={view.edges}
-            positions={current.positions}
-            radius={current.radius}
+            nodes={shown.nodes}
+            edges={shown.edges}
+            positions={shown.positions}
+            radius={shown.radius}
             palette={palette}
             quality={quality}
             labelBudget={labelBudget}
@@ -617,7 +635,7 @@ export function Atlas() {
       ) : (
         <Loading label="Arranging the atlas" />
       )}
-      {current ? (
+      {shown ? (
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           {labelItems.map((l) => (
             <span

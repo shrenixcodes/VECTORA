@@ -192,16 +192,32 @@ function MindMapInner() {
     if (tree) walk(tree, 0);
     return out;
   }, [tree]);
+  const childKeys = useMemo(() => {
+    const m = new Map<string, string[]>();
+    const walk = (item: TreeItem) => {
+      m.set(item.key, item.children.map((c) => c.key));
+      item.children.forEach(walk);
+    };
+    if (tree) walk(tree);
+    return m;
+  }, [tree]);
   const collapsedList = layouts.mindmapCollapsed ?? defaultCollapsed;
   const collapsed = useMemo(() => new Set(collapsedList), [collapsedList]);
   const toggle = useCallback(
     (key: string) => {
       const next = new Set(useWorkspace.getState().layouts.mindmapCollapsed ?? defaultCollapsed);
-      if (next.has(key)) next.delete(key);
+      const expanding = next.has(key);
+      if (expanding) next.delete(key);
       else next.add(key);
       setLayout('mindmapCollapsed', [...next]);
+      // Keep a newly opened branch on screen: pan (and zoom out if needed) to show it with its children.
+      if (expanding)
+        setTimeout(() => {
+          const ids = [key, ...(childKeys.get(key) ?? []).slice(0, 60)].filter((id) => flow.getNode(id));
+          void flow.fitView({ nodes: ids.map((id) => ({ id })), padding: 0.25, maxZoom: flow.getZoom(), duration: reducedMotion ? 0 : 380 });
+        }, 80);
     },
-    [defaultCollapsed, setLayout],
+    [defaultCollapsed, setLayout, childKeys, flow, reducedMotion],
   );
 
   // Paths from the root to every tree item, for search and reveal.
@@ -424,7 +440,7 @@ function MindMapInner() {
         maxZoom={2}
         nodesConnectable={false}
         elementsSelectable
-        onlyRenderVisibleElements
+        onlyRenderVisibleElements={nodes.length > 600}
         proOptions={{ hideAttribution: false }}
         onNodeClick={(e, n) => {
           const item = (n.data as MindData).item;
