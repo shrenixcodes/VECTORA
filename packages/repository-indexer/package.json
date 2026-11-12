@@ -1,0 +1,9 @@
+{
+  "name": "@vectora/repository-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@vectora/graph-schema": "*", "@vectora/shared": "*", "@vectora/language-adapters": "*", "@vectora/graph-engine": "*", "fast-glob": "^3.3.3", "ignore": "^7.0.14", "p-limit": "^7.3.3" }
+}

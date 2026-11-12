@@ -1,0 +1,9 @@
+{
+  "name": "@vectora/language-adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@vectora/graph-schema": "*", "typescript": "~5.9.3", "web-tree-sitter": "0.27.2" }
+}

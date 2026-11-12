@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+samples
+package-lock.json
+*.wasm
+.vectora-data
+test-results
+playwright-report
+docs/LICENSES.md
