@@ -36,7 +36,6 @@ Everything marked done in `IMPLEMENTATION_CHECKLIST.md`, including all sixteen i
 | Live test against github.com | Not done; a stand-in API is used in tests |
 | Optional narrative provider with a real service | Implemented, not exercised |
 | Desktop packaging (Tauri 2) | Plan only |
-| Screenshots | None |
 | Receiver-type inference outside TypeScript, mounted route prefixes, 2D node shapes | Not done |
 | macOS, Linux, other browsers | Not tested |
 
@@ -57,7 +56,7 @@ Run with `npm start`. `node_modules` must be present. There is no installer and 
 2. Try a real GitHub import, public and private, and record the result.
 3. Add a browser rendering benchmark (frame times, memory) for the 5,000-file synthetic repository.
 4. Reuse the TypeScript compiler program between runs to make single-file re-indexing fast.
-5. Take screenshots for the README and the user guide.
+5. Add screenshots to the user guide.
 6. Test on macOS and Linux, and in Firefox.
 7. Decide on desktop packaging and settle the open question in the Tauri plan.
 8. Merge `feat/vectora` into `main` and tag `v0.1.0`.

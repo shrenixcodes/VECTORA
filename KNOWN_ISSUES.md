@@ -30,7 +30,7 @@ Version 0.1.0, 2026-11-12. Each item says what the limitation is and, where ther
 18. **“Open source location” opens the file inside VECTORA**, not in an external editor.
 19. **The 2D canvas is keyboard operable but nodes are not individually exposed to assistive technology.** The Mind Map, the Search page and the inspector lists present the same content as ordinary focusable elements.
 20. **PNG export captures the current view**, not the whole graph. The Mind Map exports the whole map.
-21. **No screenshots** in the README or the user guide yet.
+21. **Screenshots and the recorded tour show the sample repository only**, and the user guide has no screenshots. They are regenerated with `npx tsx scripts/screenshots.ts --record`.
 22. **A browser tab that was open during a rebuild may need a reload** to pick up new script files.
 
 ## Security

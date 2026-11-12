@@ -108,7 +108,8 @@ Status against the master directive. `[x]` done and verified, `[~]` partly done 
 - [x] Security notes, error handling, production logging with redaction
 - [x] Dependency audit clean
 - [~] Desktop packaging: plan written, not built (K33)
-- [ ] Screenshots in the README (K21)
+- [x] Screenshots and a recorded tour in the README, captured from the real application
+- [x] Continuous integration workflow (type check, lint, tests, build, audit)
 
 ## Definition of done
 

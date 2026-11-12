@@ -22,3 +22,4 @@ First version.
 - Settings for appearance, graph, performance, repository and privacy; light and dark themes; reduced-motion support.
 - Local engine bound to the loopback interface with host and origin checks, safe archive handling and encrypted credential storage.
 - Unit, integration and browser tests; performance benchmarks; documentation.
+- README with screenshots and a recorded tour captured from the application; continuous integration workflow.

@@ -388,12 +388,15 @@ function AtlasScene({
             : n.type === 'Concept' || n.type === 'Package'
               ? radius * 0.7
               : isSymbolType(n.type)
-                ? 13
-                : 26;
+                ? 34
+                : 46;
       // Look at the node from outside the structure, keeping the current side when the node is central.
       const dir =
         target.lengthSq() > 4 ? target.clone().normalize() : camera.position.clone().sub(target).normalize();
-      dir.y += 0.25;
+      // Step to the side and up, so the node is not seen in line with its parent and the centre.
+      const side = new THREE.Vector3(0, 1, 0).cross(dir);
+      if (side.lengthSq() > 0.01) dir.addScaledVector(side.normalize(), 0.75);
+      dir.y += 0.45;
       flyTo(target.clone().add(dir.normalize().multiplyScalar(dist)), target);
     },
     [indexOf, nodes, pos, radius, camera, flyTo],
@@ -862,7 +865,7 @@ export function Atlas() {
       ) : null}
       <nav
         aria-label="Location in the atlas"
-        className="absolute bottom-3 left-3 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-1 bg-canvas/85 px-2 py-1"
+        className="absolute bottom-3 left-3 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-1 z-[3] bg-canvas px-2 py-1"
         data-testid="atlas-breadcrumb"
       >
         {crumbs.map((c, i) => (
@@ -886,9 +889,11 @@ export function Atlas() {
           </span>
         ))}
       </nav>
-      <p className="meta pointer-events-none absolute bottom-3 right-3 hidden bg-canvas/80 px-2 py-1 lg:block">
-        Drag to orbit, right-drag to pan, scroll to zoom, double-click to unfold
-      </p>
+      {primary ? null : (
+        <p className="meta pointer-events-none absolute bottom-3 right-3 hidden bg-canvas/80 px-2 py-1 lg:block">
+          Drag to orbit, right-drag to pan, scroll to zoom, double-click to unfold
+        </p>
+      )}
     </div>
   );
 }

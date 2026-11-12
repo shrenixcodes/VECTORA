@@ -9,7 +9,7 @@ Items are grouped by intent, not by date. Nothing here is a commitment.
 - **Receiver type inference for Python and tier-2 languages**, so that calls on local variables with an evident type (`x = Foo(); x.bar()`) can be resolved.
 - **Watch mode** for local folders, off by default, re-indexing after changes settle.
 - **Node shapes in the 2D view** to match the 3D shapes.
-- **Screenshots** in the README and the user guide.
+- **Screenshots** in the user guide.
 - **Mounted routers and route prefixes** (`app.use('/api', router)`) reflected in endpoint paths.
 - **Rendering benchmarks** measured in a browser (frame times while panning and zooming large graphs).
 
