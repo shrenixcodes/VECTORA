@@ -36,7 +36,7 @@ export const LIGHT: Palette = {
   clay: '#A18C72',
   ash: '#B8B3A7',
   success: '#55704F',
-  warning: '#8F6B25',
+  warning: '#7D5C1B',
   error: '#964436',
   selection: '#34445C',
   relationActive: '#34445C',

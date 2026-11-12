@@ -103,8 +103,10 @@ export class SearchIndex {
       else if (e.qualified.includes(q)) (score = 50), (match = 'qualified');
       else if (qTokens.length > 1 && qTokens.every((t) => e.tokens.some((et) => et.startsWith(t)))) score = 48;
       if (score < 60 && e.path) {
-        if (e.path === q) (score = Math.max(score, 88)), (match = 'path');
-        else if (pathLike && e.path.endsWith(q)) (score = Math.max(score, 70)), (match = 'path');
+        // A path names a file: the file itself ranks above the symbols defined in it.
+        const fileLike = e.node.type === 'File' || e.node.type === 'Configuration' || e.node.type === 'Directory' || e.node.type === 'Module';
+        if (e.path === q) (score = Math.max(score, fileLike ? 88 : 34)), (match = 'path');
+        else if (pathLike && e.path.endsWith(q)) (score = Math.max(score, fileLike ? 70 : 28)), (match = 'path');
         else if (e.path.includes(q) && score < 40) {
           // Path-only matches favour the file itself over its symbols.
           score = e.node.type === 'File' || e.node.type === 'Configuration' || e.node.type === 'Directory' || e.node.type === 'Module' ? 40 : 18;
