@@ -1,0 +1,31 @@
+{
+  "name": "@vectora/local-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.4.1",
+    "@fastify/multipart": "^10.1.8",
+    "@fastify/static": "^10.1.10",
+    "@vectora/graph-engine": "*",
+    "@vectora/graph-schema": "*",
+    "@vectora/language-adapters": "*",
+    "@vectora/repository-indexer": "*",
+    "@vectora/search": "*",
+    "@vectora/shared": "*",
+    "fastify": "^5.12.8",
+    "ignore": "^7.0.14",
+    "octokit": "^5.0.5",
+    "yauzl": "^3.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/yauzl": "^2.10.3",
+    "fflate": "^0.8.3"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@vectora/graph-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@vectora/graph-schema": "*",
+    "@vectora/shared": "*",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
+    "graphology-types": "^0.24.8"
+  }
+}

@@ -1,0 +1,530 @@
+/* Latin subsets only: the three faces are bundled, nothing is fetched from a font service.
+   The few Japanese glyphs used as marks fall back to the system mincho / gothic. */
+@import '@fontsource/zen-kaku-gothic-new/latin-400.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-500.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-700.css';
+@import '@fontsource/zen-kaku-gothic-new/latin-ext-400.css';
+@import '@fontsource/shippori-mincho/latin-400.css';
+@import '@fontsource/shippori-mincho/latin-600.css';
+@import '@fontsource/shippori-mincho/latin-ext-400.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Tokens. Values mirror src/lib/tokens.ts (checked by a unit test).
+   --------------------------------------------------------------------------- */
+:root {
+  --canvas: #f8f7f2;
+  --surface: #f3f1ea;
+  --elevated: #fbfaf6;
+  --text: #20211f;
+  --text-secondary: #5f5d55;
+  --text-muted: #8c897f;
+  --line: #dcd8ce;
+  --indigo: #34445c;
+  --clay: #a18c72;
+  --ash: #b8b3a7;
+  --success: #55704f;
+  --warning: #7d5c1b;
+  --error: #964436;
+  --selection: #34445c;
+  --relation-active: #34445c;
+  --relation-unverified: #a18c72;
+  --on-accent: #f8f7f2;
+  --duration-ui: 200ms;
+  --duration-panel: 380ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --canvas: #171816;
+  --surface: #20211f;
+  --elevated: #272824;
+  --text: #eceae2;
+  --text-secondary: #a7a499;
+  --text-muted: #77766d;
+  --line: #373832;
+  --indigo: #8292ad;
+  --clay: #b39a7a;
+  --ash: #5c5b54;
+  --success: #8fae8a;
+  --warning: #c9a566;
+  --error: #d08c7c;
+  --selection: #8292ad;
+  --relation-active: #8292ad;
+  --relation-unverified: #b39a7a;
+  --on-accent: #171816;
+  color-scheme: dark;
+}
+
+:root[data-motion='reduced'] {
+  --duration-ui: 0ms;
+  --duration-panel: 0ms;
+}
+
+/* Reduced motion. Kept outside the cascade layers so it overrides the token values above. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) {
+    --duration-ui: 0ms;
+    --duration-panel: 0ms;
+  }
+  :root:not([data-motion='full']) *,
+  :root:not([data-motion='full']) *::before,
+  :root:not([data-motion='full']) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0ms !important;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+  --color-line: var(--line);
+  --color-indigo: var(--indigo);
+  --color-clay: var(--clay);
+  --color-ash: var(--ash);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-on-accent: var(--on-accent);
+  --font-sans: 'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', system-ui, sans-serif;
+  --font-serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  /* Type scale */
+  --text-meta: 0.75rem;
+  --text-label: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-section: 1.375rem;
+  --text-page: clamp(1.875rem, 1.4rem + 1.6vw, 2.5rem);
+  --text-display: clamp(2.75rem, 1.6rem + 4.2vw, 4rem);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+}
+
+@layer base {
+  html {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-size: var(--text-body);
+    font-feature-settings: 'palt' 1;
+  }
+  #root {
+    min-height: 100dvh;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 500;
+    line-height: 1.25;
+    margin: 0;
+    text-wrap: balance;
+  }
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  a {
+    color: inherit;
+    text-decoration-color: var(--line);
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+    transition:
+      text-decoration-color var(--duration-ui) var(--ease),
+      color var(--duration-ui) var(--ease);
+  }
+  a:hover {
+    text-decoration-color: currentColor;
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--indigo) 24%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--indigo);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+}
+
+@layer components {
+  .font-editorial {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--text-muted);
+    letter-spacing: 0;
+  }
+  .label {
+    font-size: var(--text-label);
+    color: var(--text-secondary);
+  }
+  .rule {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 0;
+  }
+  /* Vertical brand spine — Japanese vertical setting used as the signature element. */
+  .spine {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 0.42em;
+    font-size: var(--text-meta);
+    color: var(--text-muted);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-label);
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background var(--duration-ui) var(--ease),
+      border-color var(--duration-ui) var(--ease),
+      color var(--duration-ui) var(--ease);
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--text-muted);
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--canvas);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--indigo);
+    border-color: var(--indigo);
+    color: var(--on-accent);
+  }
+  .btn-quiet {
+    border-color: transparent;
+    padding: 0 8px;
+    color: var(--text-secondary);
+  }
+  .btn-sm {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: var(--text-meta);
+  }
+  .btn-icon {
+    min-height: 32px;
+    width: 32px;
+    padding: 0;
+  }
+  .btn[aria-pressed='true'],
+  .btn[data-active='true'] {
+    border-color: var(--text);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  .field {
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--elevated);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-label);
+    transition: border-color var(--duration-ui) var(--ease);
+  }
+  .field::placeholder {
+    color: var(--text-muted);
+  }
+  .field:hover {
+    border-color: var(--ash);
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 1px var(--indigo);
+  }
+  textarea.field {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    line-height: 1.7;
+    resize: vertical;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1px 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-meta);
+    color: var(--text-secondary);
+    line-height: 1.7;
+    white-space: nowrap;
+  }
+  .tag-derived {
+    border-style: dashed;
+    border-color: var(--relation-unverified);
+    color: var(--text-secondary);
+  }
+  .link-row {
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+      padding-left var(--duration-ui) var(--ease),
+      color var(--duration-ui) var(--ease);
+  }
+  .link-row:hover {
+    padding-left: 6px;
+    color: var(--indigo);
+  }
+  .prose-doc {
+    max-width: 68ch;
+    line-height: 1.75;
+  }
+  .prose-doc h1,
+  .prose-doc h2,
+  .prose-doc h3 {
+    font-family: var(--font-serif);
+    margin: 1.8em 0 0.6em;
+  }
+  .prose-doc h1 {
+    font-size: 1.75rem;
+  }
+  .prose-doc h2 {
+    font-size: 1.3rem;
+  }
+  .prose-doc h3 {
+    font-size: 1.1rem;
+  }
+  .prose-doc p,
+  .prose-doc ul,
+  .prose-doc ol,
+  .prose-doc pre,
+  .prose-doc table,
+  .prose-doc blockquote {
+    margin: 0 0 1em;
+  }
+  .prose-doc ul,
+  .prose-doc ol {
+    padding-left: 1.3em;
+  }
+  .prose-doc pre {
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow-x: auto;
+    font-size: var(--text-meta);
+    line-height: 1.7;
+  }
+  .prose-doc :not(pre) > code {
+    padding: 0.1em 0.35em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .prose-doc blockquote {
+    padding-left: 16px;
+    border-left: 2px solid var(--clay);
+    color: var(--text-secondary);
+  }
+  .prose-doc table {
+    border-collapse: collapse;
+    font-size: var(--text-label);
+    display: block;
+    overflow-x: auto;
+  }
+  .prose-doc th,
+  .prose-doc td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+  .prose-doc img {
+    max-width: 100%;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-label);
+  }
+  .data-table th {
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 6px 12px 6px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 7px 12px 7px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+  .data-table .num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    font-variant-numeric: tabular-nums;
+  }
+  .skip-link {
+    position: absolute;
+    left: 8px;
+    top: -48px;
+    z-index: 100;
+    padding: 8px 12px;
+    background: var(--text);
+    color: var(--canvas);
+  }
+  .skip-link:focus {
+    top: 8px;
+  }
+}
+
+/* Overlays */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  animation: overlay-in var(--duration-ui) var(--ease);
+}
+:root[data-theme='dark'] .overlay {
+  background: rgba(0, 0, 0, 0.55);
+}
+.dialog {
+  position: fixed;
+  z-index: 51;
+  left: 50%;
+  top: 14vh;
+  width: min(640px, calc(100vw - 32px));
+  max-height: 72vh;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  background: var(--elevated);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.45);
+  animation: panel-in var(--duration-panel) var(--ease);
+}
+
+/* Library overrides: React Flow and CodeMirror follow the tokens. */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--ash);
+  --xy-edge-stroke-selected: var(--indigo);
+  --xy-controls-button-background-color: var(--elevated);
+  --xy-controls-button-background-color-hover: var(--surface);
+  --xy-controls-button-color: var(--text);
+  --xy-controls-button-border-color: var(--line);
+  --xy-minimap-background-color: var(--surface);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--canvas) 70%, transparent);
+  --xy-attribution-background-color: transparent;
+  font-family: var(--font-sans);
+}
+.react-flow__controls {
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+.react-flow__attribution a {
+  color: var(--text-muted);
+}
+.cm-editor {
+  font-size: 12.5px;
+  background: transparent;
+}
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+  line-height: 1.65;
+}
+.cm-editor .cm-gutters {
+  background: transparent;
+  color: var(--text-muted);
+  border-right: 1px solid var(--line);
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.cm-editor .cm-activeLine,
+.cm-editor .cm-activeLineGutter {
+  background: transparent;
+}
+.cm-editor .cm-vectora-range {
+  background: color-mix(in srgb, var(--indigo) 9%, transparent);
+}
+.sigma-container canvas {
+  outline: none;
+}

@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-11-12T12:20:02.515Z",
+  "machine": {
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12450H",
+    "logicalCores": 12,
+    "memoryGb": 7.7,
+    "platform": "win32 10.0.26200",
+    "node": "v24.14.1"
+  },
+  "settings": {
+    "workers": 4
+  },
+  "indexing": [
+    {
+      "files": 1000,
+      "nodes": 7948,
+      "symbols": 6700,
+      "relationships": 26949,
+      "unresolved": 0,
+      "validationErrors": 0,
+      "fullIndex": {
+        "ms": 5607,
+        "peakRssMb": 488,
+        "cpuPercent": 8.8
+      },
+      "reindexNoChange": {
+        "ms": 1073,
+        "detectedUnchanged": true
+      },
+      "reindexOneFile": {
+        "ms": 5737,
+        "analyzedFiles": 9,
+        "reusedFiles": 1007
+      },
+      "saveGraphMs": 819,
+      "loadGraphMs": 165,
+      "databaseMb": 29
+    },
+    {
+      "files": 5000,
+      "nodes": 39033,
+      "symbols": 33500,
+      "relationships": 134053,
+      "unresolved": 0,
+      "validationErrors": 0,
+      "fullIndex": {
+        "ms": 22260,
+        "peakRssMb": 706,
+        "cpuPercent": 6.1
+      },
+      "reindexNoChange": {
+        "ms": 5078,
+        "detectedUnchanged": true
+      },
+      "reindexOneFile": {
+        "ms": 17485,
+        "analyzedFiles": 9,
+        "reusedFiles": 5026
+      },
+      "saveGraphMs": 4439,
+      "loadGraphMs": 1281,
+      "databaseMb": 149.9
+    },
+    {
+      "files": 10000,
+      "nodes": 77758,
+      "symbols": 67000,
+      "relationships": 267793,
+      "unresolved": 0,
+      "validationErrors": 0,
+      "fullIndex": {
+        "ms": 31307,
+        "peakRssMb": 995,
+        "cpuPercent": 6.8
+      },
+      "reindexNoChange": {
+        "ms": 10615,
+        "detectedUnchanged": true
+      },
+      "reindexOneFile": {
+        "ms": 27226,
+        "analyzedFiles": 9,
+        "reusedFiles": 10041
+      },
+      "saveGraphMs": 8899,
+      "loadGraphMs": 2541,
+      "databaseMb": 303.6
+    }
+  ],
+  "largeGraph": {
+    "nodes": 52521,
+    "symbols": 50000,
+    "relationships": 100000,
+    "validate": {
+      "ms": 539,
+      "peakRssMb": 559
+    },
+    "index": {
+      "ms": 174,
+      "peakRssMb": 561
+    },
+    "communities": {
+      "ms": 857,
+      "peakRssMb": 593
+    },
+    "cycles": {
+      "ms": 121,
+      "peakRssMb": 581
+    },
+    "searchIndex": {
+      "ms": 97,
+      "peakRssMb": 573
+    },
+    "search50": {
+      "ms": 2825,
+      "peakRssMb": 576
+    },
+    "layout3d": {
+      "ms": 3947,
+      "peakRssMb": 579
+    },
+    "save": {
+      "ms": 8043,
+      "peakRssMb": 578
+    },
+    "load": {
+      "ms": 1264,
+      "peakRssMb": 584
+    },
+    "loadStructure": {
+      "ms": 676,
+      "peakRssMb": 591
+    },
+    "databaseMb": 79.1,
+    "exportJson": {
+      "ms": 158,
+      "peakRssMb": 638
+    },
+    "exportJsonMb": 57.7
+  }
+}

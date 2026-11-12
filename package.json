@@ -1,0 +1,50 @@
+{
+  "name": "vectora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VECTORA — codebase intelligence platform. Understand what connects.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:engine": "npm run dev -w @vectora/local-engine",
+    "dev:web": "npm run dev -w @vectora/web",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/engine/server.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "bench": "tsx scripts/bench.ts",
+    "licenses": "node scripts/license-inventory.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@playwright/test": "^1.65.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.1.0",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^16.0.0",
+    "jsdom": "^31.0.0",
+    "prettier": "^3.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}
